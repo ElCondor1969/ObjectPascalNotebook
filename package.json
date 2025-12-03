@@ -1,0 +1,43 @@
+{
+  "name": "object-pascal-notebook",
+  "displayName": "Object Pascal Notebook Support",
+  "description": "Adds Object Pascal language support to VSCode Notebooks.",
+  "version": "0.0.1",
+  "publisher": "yourpublisher",
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": [
+    "Notebooks"
+  ],
+  "activationEvents": [
+    "onNotebookType:objectPascalNotebook"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "notebooks": [
+      {
+        "type": "objectPascalNotebook",
+        "displayName": "Object Pascal Notebook",
+        "selector": [
+          {
+            "filenamePattern": "*.opnb"
+          }
+        ],
+        "priority": "default"
+      }
+    ]
+  },
+  "scripts": {
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "package": "npx @vscode/vsce package",
+    "publish": "npx @vscode/vsce publish"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "@types/vscode": "^1.90.0",
+    "@vscode/vsce": "^3.7.1",
+    "typescript": "^5.3.0"
+  }
+}

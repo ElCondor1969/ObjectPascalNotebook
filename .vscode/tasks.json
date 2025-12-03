@@ -1,0 +1,15 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "build http-server",
+      "type": "shell",
+      "command": "lazbuild",
+      "args": [
+        "./src/HTTPserver/HTTPServer.lpi",
+        "--opt=-FE${workspaceFolder}/dist"
+      ],
+      "problemMatcher": []
+    }
+  ]
+}
