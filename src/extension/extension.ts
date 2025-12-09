@@ -114,8 +114,13 @@ export function activate(context: vscode.ExtensionContext) {
         const startResp = await fetch(`http://localhost:${serverPort}/execute`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ notebook: notebookId, cell: cell.index, code })
+          body: JSON.stringify({ notebookId, cell: cell.index, code })
         });
+
+        if (!startResp.ok) {
+          const errorMessage = await startResp.text();
+          throw new Error(`Server :${errorMessage}`);
+        }
 
         const startJson = await startResp.json();
         const executionId = startJson.executionId;
@@ -131,8 +136,13 @@ export function activate(context: vscode.ExtensionContext) {
           const pollResp = await fetch(`http://localhost:${serverPort}/output`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ executionId, offset: lastOffset })
+            body: JSON.stringify({ notebookId, executionId, offset: lastOffset })
           });
+
+          if (!pollResp.ok) {
+            const errorMessage = await pollResp.text();
+            throw new Error(`Server :${errorMessage}`);
+          }
 
           const pollJson = await pollResp.json();
 
@@ -142,14 +152,11 @@ export function activate(context: vscode.ExtensionContext) {
             break;
           }
 
-          if (pollJson.chunk) {
-            lastOffset += pollJson.chunk.length;
-            exec.replaceOutput([
-              new vscode.NotebookCellOutput([
-                vscode.NotebookCellOutputItem.text(pollJson.completeOutput ?? 'OK')
-              ])
-            ]);
-          }
+          exec.replaceOutput([
+            new vscode.NotebookCellOutput([
+              vscode.NotebookCellOutputItem.text(pollJson.finished ? (pollJson.completeOutput || 'OK') : pollJson.chunk, 'text/html')
+            ])
+          ]);
 
           if (pollJson.finished) {
             exec.end(true);
@@ -161,14 +168,14 @@ export function activate(context: vscode.ExtensionContext) {
           await fetch(`http://localhost:${serverPort}/cancel`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ executionId })
+            body: JSON.stringify({ notebookId, executionId })
           });
           exec.end(false);
         }
 
       } 
       catch (err) {
-        exec.replaceOutput([ new vscode.NotebookCellOutput([ vscode.NotebookCellOutputItem.text('Error:' + String(err)) ]) ]);
+        exec.replaceOutput([ new vscode.NotebookCellOutput([ vscode.NotebookCellOutputItem.text('Error:' + String(err), 'text/html') ]) ]);
         exec.end(false);
       } 
       finally {
@@ -182,7 +189,7 @@ export function activate(context: vscode.ExtensionContext) {
     for (const [_, r] of runningExecutions) {
       r.cancel();
     }
-    vscode.window.showInformationMessage('Annullamento richiesto.');
+    vscode.window.showInformationMessage('Abort requested.');
   });
 
   context.subscriptions.push(controller, cancelCmd, serializer);
