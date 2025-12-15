@@ -23,6 +23,8 @@ type
     procedure dwsUnitLibraryFunctionsRaiseException_Args_Eval(
       info: TProgramInfo);
     procedure dwsLibreryUnitFunctionsRestartEval(info: TProgramInfo);
+    procedure dwsUnitLibraryFunctionsImport_stringstring_Eval(
+      info: TProgramInfo);
   private
     { Private declarations }
     FScriptExecuter:TScriptExecuter;
@@ -152,6 +154,12 @@ procedure TScriptUnitBaseLibrary.dwsUnitLibraryFunctionsRaiseException_String_Ev
   info: TProgramInfo);
 begin
   RaiseException(Info.ValueAsString['AMessage']);
+end;
+
+procedure TScriptUnitBaseLibrary.dwsUnitLibraryFunctionsImport_stringstring_Eval(
+  info: TProgramInfo);
+begin
+  FScriptExecuter.ImportFromPath(Info.ValueAsString['Namespace'],Info.ValueAsString['APath']);
 end;
 
 procedure TScriptUnitBaseLibrary.dwsUnitLibraryFunctionsRaiseException_Args_Eval(

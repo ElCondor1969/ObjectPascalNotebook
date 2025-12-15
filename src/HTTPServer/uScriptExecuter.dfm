@@ -3,6 +3,7 @@ object ScriptExecuter: TScriptExecuter
   Height = 234
   Width = 317
   object DelphiWebScript: TDelphiWebScript
+    Config.OnInclude = DelphiWebScriptInclude
     Config.OnNeedUnit = DelphiWebScriptNeedUnit
     Left = 72
     Top = 40

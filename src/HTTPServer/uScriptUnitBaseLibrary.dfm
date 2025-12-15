@@ -104,61 +104,60 @@ object ScriptUnitBaseLibrary: TScriptUnitBaseLibrary
         Parameters = <
           item
             Name = 'P1'
-            DataType = 'string'
-            HasDefaultValue = True
+            DataType = 'variant'
             DefaultValue = ''
           end
           item
             Name = 'P2'
-            DataType = 'string'
+            DataType = 'variant'
             HasDefaultValue = True
             DefaultValue = ''
           end
           item
             Name = 'P3'
-            DataType = 'string'
+            DataType = 'variant'
             HasDefaultValue = True
             DefaultValue = ''
           end
           item
             Name = 'P4'
-            DataType = 'string'
+            DataType = 'variant'
             HasDefaultValue = True
             DefaultValue = ''
           end
           item
             Name = 'P5'
-            DataType = 'string'
+            DataType = 'variant'
             HasDefaultValue = True
             DefaultValue = ''
           end
           item
             Name = 'P6'
-            DataType = 'string'
+            DataType = 'variant'
             HasDefaultValue = True
             DefaultValue = ''
           end
           item
             Name = 'P7'
-            DataType = 'string'
+            DataType = 'variant'
             HasDefaultValue = True
             DefaultValue = ''
           end
           item
             Name = 'P8'
-            DataType = 'string'
+            DataType = 'variant'
             HasDefaultValue = True
             DefaultValue = ''
           end
           item
             Name = 'P9'
-            DataType = 'string'
+            DataType = 'variant'
             HasDefaultValue = True
             DefaultValue = ''
           end
           item
             Name = 'P10'
-            DataType = 'string'
+            DataType = 'variant'
             HasDefaultValue = True
             DefaultValue = ''
           end>
@@ -167,6 +166,20 @@ object ScriptUnitBaseLibrary: TScriptUnitBaseLibrary
       item
         Name = 'Restart'
         OnEval = dwsLibreryUnitFunctionsRestartEval
+      end
+      item
+        Name = 'Import'
+        Parameters = <
+          item
+            Name = 'Namespace'
+            DataType = 'string'
+          end
+          item
+            Name = 'APath'
+            DataType = 'string'
+          end>
+        Overloaded = True
+        OnEval = dwsUnitLibraryFunctionsImport_stringstring_Eval
       end>
     UnitName = 'uBaseLibrary'
     StaticSymbols = False

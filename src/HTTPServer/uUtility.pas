@@ -23,6 +23,7 @@ procedure DestroyInternalObject(HandleOggetto:Int64);
 procedure DestroyCostantObject(const Oggetto);
 procedure DestroyObject(var Oggetto);
 function GetFileExtension(const FileName:string):string;
+function GetFileName(const FileName:string):string;
 function MIMEFromFileExtension(Extension:string):string;
 function SeNullo(const ValoreSottoTest,ValoreSostitutivo:variant):variant;
 function GenerateID(IDLength:integer=16;IDNumericFlag:boolean=false):string;
@@ -280,6 +281,16 @@ begin
   if (Result<>'') then
     if (Result[1]='.') then
       Delete(Result,1,1);
+end;
+
+function GetFileName(const FileName:string):string;
+var
+  Position:integer;
+begin
+  Result:=ExtractFileName(FileName);
+  Position:=LastDelimiter('.',Result);
+  if (Position>0) then
+    Result:=Copy(Result,1,Position-1);
 end;
 
 function MIMEFromFileExtension(Extension:string):string;

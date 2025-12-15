@@ -3,9 +3,9 @@ unit uScriptExecuter;
 interface
 
 uses
-  System.SysUtils, System.Classes, Variants, Generics.Collections, System.IOUtils,
-  dwsStrings, dwsComp, dwsExprs, dwsCompiler, dwsFunctions, dwsClassesLibModule, dwsJSONConnector,
-  dwsDataBaseLibModule, dwsLinq, dwsLinqSql, dwsSymbols, dwsUnitSymbols, dwsScriptSource,
+  System.Classes, dwsUtils, System.SysUtils, System.IOUtils, System.StrUtils, Variants, System.Types, Generics.Collections,
+  dwsStrings, dwsComp, dwsExprs, dwsDataContext, dwsCompiler, dwsFunctions, dwsStack, dwsClassesLibModule,
+  dwsJSONConnector, dwsDataBaseLibModule, dwsLinq, dwsLinqSql, dwsSymbols, dwsUnitSymbols, dwsScriptSource,
   dwsRTTIConnector, dwsRTTIFunctions;
 
 type
@@ -16,10 +16,31 @@ type
     dwsRTTIConnector: TdwsRTTIConnector;
     function DelphiWebScriptNeedUnit(const UnitName: string;
       var UnitSource: string): IdwsUnit;
+    procedure DelphiWebScriptInclude(const scriptName: string;
+      var scriptSource: string);
+  private
+    { Private declarations }
+    type
+      TUnitSearchInfo=record
+        Namespace:string;
+        Path:array of string;
+      end;
+
+      TUnitSearch=class(TObject)
+      private
+        FDict:TDictionary<string,TUnitSearchInfo>;
+      public
+        procedure AfterConstruction;override;
+        procedure BeforeDestruction;override;
+        procedure ImportFromPath(const ANamespace,APath:string);
+        function GetUnitCode(const UnitName:string):string;
+      end;
   private
     { Private declarations }
     FVariablesDictionary:TDictionary<string,variant>;
+    FUnitSearch:TUnitSearch;
     FProgram:IdwsProgram;
+    FExecution:IdwsProgramExecution;
     procedure InjectUnit(var Script:string);
     function GetMustRestartFlag:boolean;
     procedure SetMustRestartFlag(const Value:boolean);
@@ -34,6 +55,7 @@ type
     function ExecuteScript(Script:string;InitialVariables:TDictionary<string,variant>):string;overload;
     function GetConsoleOutput:string;
     procedure AddConsoleOutputRow(const AMessage:string);
+    procedure ImportFromPath(const ANamespace,APath:string);
     property VariablesDictionary:TDictionary<string,variant> read FVariablesDictionary;
     property MustRestartFlag:boolean read GetMustRestartFlag write SetMustRestartFlag;
   end;
@@ -49,6 +71,116 @@ const
   varConsoleOutout='__CONSOLE_OUTPUT__';
   varFlagRestart='__FLAG_RESTART__';
 
+var
+  FlagPreserveStack:boolean=false;
+
+type
+  TOPNBProgramExecution=class(TdwsProgramExecution)
+  public
+    function BeginProgram:boolean;override;
+    procedure EndProgram;override;
+  end;
+
+{ TOPNBProgramExecution }
+
+function TOPNBProgramExecution.BeginProgram:boolean;
+var
+  TempStack:TStackMixIn;
+begin
+  if (FlagPreserveStack) then
+    TempStack.Assign(FStack);
+  try
+    Result:=inherited;
+    if (FlagPreserveStack) then
+      FStack.Assign(TempStack);
+  finally
+    if (FlagPreserveStack) then
+      TempStack.Finalize;
+  end;
+end;
+
+procedure TOPNBProgramExecution.EndProgram;
+var
+  TempStack:TStackMixIn;
+begin
+  TempStack.Assign(FStack);
+  try
+    inherited;
+    FStack.Assign(TempStack);
+  finally
+    TempStack.Finalize;
+  end;
+end;
+
+{ TScriptExecuter.TUnitSearch }
+
+procedure TScriptExecuter.TUnitSearch.AfterConstruction;
+begin
+  inherited;
+  FDict:=TDictionary<string,TUnitSearchInfo>.Create;
+end;
+
+procedure TScriptExecuter.TUnitSearch.BeforeDestruction;
+begin
+  inherited;
+  FDict.Free;
+end;
+
+procedure TScriptExecuter.TUnitSearch.ImportFromPath(const ANamespace,APath:string);
+const
+  FileExtensions:array[0..2] of string=('.pas', '.pp', '.inc');
+var 
+  Element,UnitName:string;
+  LengthValue:integer;
+  FileList:TArray<string>;
+  UnitSearchInfo:TUnitSearchInfo;
+
+  function GetName:string;
+  begin
+    if (IndexText(ExtractFileExt(Element),FileExtensions)<2) then
+      Result:=GetFileName(Element)
+    else
+      Result:=ExtractFileName(Element);
+  end;
+
+begin
+  FileList:=TDirectory.GetFiles(
+    APath,
+    '*.*',
+    TSearchOption(1), // soAllDirectories
+    function(const Path:string;const SearchRec:TSearchRec):boolean
+    begin
+      Result:=((SearchRec.Attr or faArchive)<>0);
+      Result:=Result and (IndexText(ExtractFileExt(SearchRec.Name),FileExtensions)<>-1);
+    end
+  );
+  for Element in FileList do
+    begin
+      UnitName:=GetName;
+      if (not(FDict.TryGetValue(UnitName,UnitSearchInfo))) then
+        begin
+          UnitSearchInfo:=Default(TUnitSearchInfo);
+          UnitSearchInfo.Namespace:=ANamespace;
+        end;
+      LengthValue:=Length(UnitSearchInfo.Path);
+      SetLength(UnitSearchInfo.Path,LengthValue+1);
+      UnitSearchInfo.Path[LengthValue]:=Element;
+      FDict.AddOrSetValue(UnitName,UnitSearchInfo);
+    end;
+end;
+
+function TScriptExecuter.TUnitSearch.GetUnitCode(const UnitName:string):string;
+var
+  UnitSearchInfo:TUnitSearchInfo;
+begin
+  if (not(FDict.TryGetValue(UnitName,UnitSearchInfo))) then
+    Result:=''
+  else if (Length(UnitSearchInfo.Path)=0) then
+    Result:=''
+  else
+    Result:=TFile.ReadAllText(UnitSearchInfo.Path[0]);
+end;
+
 { TScriptExecuter }
 
 procedure TScriptExecuter.AfterConstruction;
@@ -56,6 +188,7 @@ var Linq:TdwsLinqFactory;
 begin
   inherited;
   FVariablesDictionary:=TDictionary<string,variant>.Create;
+  FUnitSearch:=TUnitSearch.Create;
   TdwsDatabaseLib.Create(Self).Script:=DelphiWebScript;
   Linq:=TdwsLinqFactory.Create(Self);
   Linq.Script:=DelphiWebScript;
@@ -67,12 +200,20 @@ procedure TScriptExecuter.BeforeDestruction;
 begin
   inherited;
   FVariablesDictionary.Free;
+  FUnitSearch.Free;
+  FExecution:=nil;
   FProgram:=nil;
+end;
+
+procedure TScriptExecuter.DelphiWebScriptInclude(const scriptName: string;
+  var scriptSource: string);
+begin
+  scriptSource:=FUnitSearch.GetUnitCode(scriptName);
 end;
 
 function TScriptExecuter.DelphiWebScriptNeedUnit(const UnitName:string;var UnitSource:string):IdwsUnit;
 begin
-  UnitSource:='';
+  UnitSource:=FUnitSearch.GetUnitCode(UnitName);
 end;
 
 function TScriptExecuter.ExecuteScript(Script:string):string;
@@ -84,79 +225,105 @@ function TScriptExecuter.ExecuteScript(Script:string;InitialVariables:TDictionar
 var k:integer;
     Errors,Error,OriginalScript:string;
     FlagDropProgram:boolean;
-    Execution:IdwsProgramExecution;
     Variable:TPair<string,variant>;
     SymbolList:TObjectList<TSymbol>;
     Symbol:TSymbol;
+    InitExpr:TBlockInitExpr;
 begin
   FVariablesDictionary.Clear;
   InjectUnit(Script);
   FlagDropProgram:=false;
-  try
-    if (Assigned(FProgram)) then
-      try
-        FProgram.Msgs.Clear;
-        SymbolList:=TObjectList<TSymbol>.Create(false);
-        for k:=0 to FProgram.Table.Count do
-          SymbolList.Add(FProgram.Table.Symbols[k]);
-        OriginalScript:=FProgram.SourceList.FindScriptSourceItem(MSG_MainModule).SourceFile.Code;
-        DelphiWebScript.RecompileInContext(FProgram,Script);
-        if (FProgram.Msgs.HasErrors) then
+  if (Assigned(FProgram)) then
+    try
+      SymbolList:=TObjectList<TSymbol>.Create(false);
+      InitExpr:=TBlockInitExpr.Create(cNullPos);
+
+      // Preserve initial expressions.
+      (* while (FProgram.ProgramObject.InitExpr.StatementCount>0) do
+        InitExpr.AddStatement(FProgram.ProgramObject.InitExpr.ExtractStatement(0)); *)
+
+      // Preserve all symbols from the current program.
+      for k:=0 to FProgram.Table.Count do
+        SymbolList.Add(FProgram.Table.Symbols[k]);
+      
+      // Store the previously compiled script.
+      OriginalScript:=FProgram.SourceList.FindScriptSourceItem(MSG_MainModule).SourceFile.Code;
+
+      // Recompiles the new script within the previous context.
+      FProgram.Msgs.Clear;
+      DelphiWebScript.RecompileInContext(FProgram,Script);
+      if (FProgram.Msgs.HasErrors) then
+        begin
+          // Restore the init expressions to the previous state.
+          k:=0;
+          while (k<FProgram.Table.Count) do
+            begin
+              Symbol:=FProgram.Table.Symbols[k];
+              if (SymbolList.IndexOf(Symbol)=-1) then
+                FProgram.Table.Remove(Symbol)
+              else
+                Inc(k);
+            end;
+
+          // Restore the previously compiled script.
+          FProgram.SourceList.FindScriptSourceItem(MSG_MainModule).SourceFile.Code:=OriginalScript;
+        end
+      else
+        // Merge the current initial expressions with the previous ones.
+        (* while (InitExpr.StatementCount>0) do
+          FProgram.ProgramObject.InitExpr.AddStatement(InitExpr.ExtractStatement(0)); *)
+    finally
+      SymbolList.Free;
+      InitExpr.Free;
+    end
+  else
+    begin
+      FProgram:=DelphiWebScript.Compile(Script);
+      if (FProgram.Msgs.HasErrors) then
+        FlagDropProgram:=true
+      else
+        FProgram.ExecutionsClass:=TOPNBProgramExecution;
+    end;
+  if (FProgram.Msgs.HasErrors) then
+    begin
+      Errors:='';
+      for k:=0 to FProgram.Msgs.Count-1 do
+        if (FProgram.Msgs[k].IsError) then
           begin
-            k:=0;
-            while (k<FProgram.Table.Count) do
-              begin
-                Symbol:=FProgram.Table.Symbols[k];
-                if (SymbolList.IndexOf(Symbol)=-1) then
-                  FProgram.Table.Remove(Symbol)
-                else
-                  Inc(k);
-              end;
-            FProgram.SourceList.FindScriptSourceItem(MSG_MainModule).SourceFile.Code:=OriginalScript;
+            Error:=FProgram.Msgs[k].AsInfo;
+            AddConsoleOutputRow(Error);
+            Errors:=Errors+Error+#13#10;
           end;
-      finally
-        SymbolList.Free;
-      end
-    else
-      begin
-        FProgram:=DelphiWebScript.Compile(Script);
-        if (FProgram.Msgs.HasErrors) then
-          FlagDropProgram:=true;
-      end;
-    if (FProgram.Msgs.HasErrors) then
-      begin
-        Errors:='';
-        for k:=0 to FProgram.Msgs.Count-1 do
-          if (FProgram.Msgs[k].IsError) then
-            begin
-              Error:=FProgram.Msgs[k].AsInfo;
-              AddConsoleOutputRow(Error);
-              Errors:=Errors+Error+#13#10;
-            end;
-        if (FlagDropProgram) then
+      if (FlagDropProgram) then
+        begin
+          FExecution:=nil;
           FProgram:=nil;
-        RaiseException(Errors);
-      end
-    else
-      begin
-        if (Assigned(InitialVariables)) then
-          for Variable in InitialVariables.ToArray do
-            FVariablesDictionary.AddOrSetValue(Variable.Key,Variable.Value);
-        FVariablesDictionary.AddOrSetValue(varConsoleOutout,'');
-        Execution:=FProgram.Execute;
-        if (not(Execution.Msgs.HasErrors)) then
-          Result:=Execution.Result.ToString
-        else
-          with Execution.Msgs do
-            begin
-              Error:=Msgs[Count-1].Text;
-              AddConsoleOutputRow(Error);
-              RaiseException(Error);
-            end;
-      end;
-  finally
-    Execution:=nil;
-  end;
+        end;
+      RaiseException(Errors);
+    end
+  else
+    begin
+      if (Assigned(InitialVariables)) then
+        for Variable in InitialVariables.ToArray do
+          FVariablesDictionary.AddOrSetValue(Variable.Key,Variable.Value);
+      FVariablesDictionary.AddOrSetValue(varConsoleOutout,'');
+      if (Assigned(FExecution)) then
+        FExecution.Execute(0)
+      else
+        begin
+          FExecution:=FProgram.Execute;
+          FlagPreserveStack:=true;
+        end;
+      if (not(FExecution.Msgs.HasErrors)) then
+        Result:=FExecution.Result.ToString
+      else
+        with FExecution.Msgs do
+          begin
+            Error:=Msgs[Count-1].Text;
+            AddConsoleOutputRow(Error);
+            RaiseException(Error);
+          end;
+    end;
 end;
 
 procedure TScriptExecuter.InjectUnit(var Script:string);
@@ -208,6 +375,11 @@ var Output:string;
 begin
   Output:=GetConsoleOutput+Format('<p>%s</p>',[AMessage]);
   FVariablesDictionary.AddOrSetValue(varConsoleOutout,Output);
+end;
+
+procedure TScriptExecuter.ImportFromPath(const ANamespace,APath:string);
+begin
+  FUnitSearch.ImportFromPath(ANamespace,APath);
 end;
 
 end.
