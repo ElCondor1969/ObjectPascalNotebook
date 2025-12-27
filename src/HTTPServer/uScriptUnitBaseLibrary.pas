@@ -4,7 +4,7 @@ interface
 
 uses
   System.SysUtils, System.Classes, Variants, Generics.Collections, Types, JSON,
-  dwsComp, dwsExprs, dwsCompiler, dwsFunctions, dwsSymbols, dwsDataContext,
+  dwsComp, dwsExprs, dwsExprList, dwsCompiler, dwsFunctions, dwsSymbols, dwsDataContext,
   dwsInfo, uScriptExecuter;
 
 type
@@ -25,6 +25,12 @@ type
     procedure dwsLibreryUnitFunctionsRestartEval(info: TProgramInfo);
     procedure dwsUnitLibraryFunctionsImport_stringstring_Eval(
       info: TProgramInfo);
+    procedure dwsUnitLibraryFunctions__LibInterface_CreateEval(
+      info: TProgramInfo);
+    procedure dwsUnitLibraryFunctions__LibInterface_DestroyEval(
+      info: TProgramInfo);
+    procedure dwsUnitLibraryFunctions__LibInterface_InvokeMethodEval(
+      info: TProgramInfo);
   private
     { Private declarations }
     FScriptExecuter:TScriptExecuter;
@@ -44,7 +50,7 @@ implementation
 {$R *.dfm}
 
 uses
-  uUtility;
+  uUtility, uDWSScripter, uLibInterface;
 
 type
   _TDataContext=class(TDataContext);
@@ -127,9 +133,53 @@ begin
   DestroyInternalObject(Info.ValueAsInteger['HandleOggetto']);
 end;
 
+procedure TScriptUnitBaseLibrary.dwsUnitLibraryFunctions__LibInterface_CreateEval(
+  Info: TProgramInfo);
+var
+  LibInterface: TLibInterface;
+begin
+  LibInterface := FScriptExecuter.GetLibInterface(Info.ValueAsString['Namespace']);
+  Info.ResultAsInteger:=
+    LibInterface.InstantiateClassObject(
+      NativeInt(FScriptExecuter),
+      PChar(Info.ValueAsString['QualifiedClassName']),
+      PChar(Info.ValueAsString['ConstructorName']),
+      Info.Vars['Args'].Data
+    );
+end;
+
+procedure TScriptUnitBaseLibrary.dwsUnitLibraryFunctions__LibInterface_DestroyEval(
+  Info: TProgramInfo);
+var
+  LibInterface: TLibInterface;
+begin
+  LibInterface := FScriptExecuter.GetLibInterface(Info.ValueAsString['Namespace']);
+  LibInterface.DestructorClassObject(
+    NativeInt(FScriptExecuter),
+    Info.ValueAsInteger['Instance'],
+    PChar(Info.ValueAsString['QualifiedClassName']),
+    PChar(Info.ValueAsString['DestructorName'])
+  );
+end;
+
+procedure TScriptUnitBaseLibrary.dwsUnitLibraryFunctions__LibInterface_InvokeMethodEval(
+  Info: TProgramInfo);
+var
+  LibInterface: TLibInterface;
+begin
+  LibInterface := FScriptExecuter.GetLibInterface(Info.ValueAsString['Namespace']);
+  Info.ResultAsVariant:=
+    LibInterface.InvokeClassMethod(
+      NativeInt(FScriptExecuter),
+      Info.ValueAsInteger['Instance'],
+      PChar(Info.ValueAsString['QualifiedClassName']),
+      PChar(Info.ValueAsString['MethodName']),
+      Info.Vars['Args'].Data
+    );
+end;
+
 procedure TScriptUnitBaseLibrary.
-            ReplaceScriptDynArrayData(ScriptDynArray:IScriptDynArray;
-                                      Dati:TData);
+            ReplaceScriptDynArrayData(ScriptDynArray:IScriptDynArray; Dati:TData);
 var DataContext:TDataContext;
 begin
   DataContext:=ScriptDynArray.GetSelf as TDataContext;
@@ -159,7 +209,7 @@ end;
 procedure TScriptUnitBaseLibrary.dwsUnitLibraryFunctionsImport_stringstring_Eval(
   info: TProgramInfo);
 begin
-  FScriptExecuter.ImportFromPath(Info.ValueAsString['Namespace'],Info.ValueAsString['APath']);
+  FScriptExecuter.Import(Info.ValueAsString['Namespace'],Info.ValueAsString['APath']);
 end;
 
 procedure TScriptUnitBaseLibrary.dwsUnitLibraryFunctionsRaiseException_Args_Eval(

@@ -14,7 +14,7 @@ var Configuration:TJSONobject;
 begin
   Application.Initialize;
   DataModuleWebServer:=TDataModuleWebServer.Create(Application);
-  Configuration:=TJSONobject.Create;
+  Configuration:=TJSONObject.Create;
   try
     DataModuleWebServer.SetConfiguration(Configuration);
   finally

@@ -27,6 +27,7 @@ function GetFileName(const FileName:string):string;
 function MIMEFromFileExtension(Extension:string):string;
 function SeNullo(const ValoreSottoTest,ValoreSostitutivo:variant):variant;
 function GenerateID(IDLength:integer=16;IDNumericFlag:boolean=false):string;
+procedure Async(AProcedure:TProc);
 function ParseJSONObject(AString:string):TJSONobject;
 function ReadJSONValue(AJSON:TJSONObject;const Name:string;DefaultValue:integer):integer;overload;
 function ReadJSONValue(AJSON:TJSONObject;const Name:string;DefaultValue:boolean):boolean;overload;
@@ -694,6 +695,11 @@ begin
         Position:=Dice mod StringIDCharacterSourceLength;
       Result:=Result+StringIDCharacterSource[Position+1];
     end;
+end;
+
+procedure Async(AProcedure:TProc);
+begin
+  TThread.CreateAnonymousThread(AProcedure).Start;
 end;
 
 initialization

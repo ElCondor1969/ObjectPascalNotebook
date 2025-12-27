@@ -76,6 +76,75 @@ object ScriptUnitBaseLibrary: TScriptUnitBaseLibrary
         OnEval = dwsUnitLibraryFunctions__VariantToArrayEval
       end
       item
+        Name = '__LibInterface_Create'
+        Parameters = <
+          item
+            Name = 'Namespace'
+            DataType = 'string'
+          end
+          item
+            Name = 'QualifiedClassName'
+            DataType = 'string'
+          end
+          item
+            Name = 'ConstructorName'
+            DataType = 'string'
+          end
+          item
+            Name = 'Args'
+            DataType = 'TVariantArray'
+          end>
+        ResultType = 'integer'
+        OnEval = dwsUnitLibraryFunctions__LibInterface_CreateEval
+      end
+      item
+        Name = '__LibInterface_Destroy'
+        Parameters = <
+          item
+            Name = 'Namespace'
+            DataType = 'string'
+          end
+          item
+            Name = 'Instance'
+            DataType = 'integer'
+          end
+          item
+            Name = 'QualifiedClassName'
+            DataType = 'string'
+          end
+          item
+            Name = 'DestructorName'
+            DataType = 'string'
+          end>
+        OnEval = dwsUnitLibraryFunctions__LibInterface_DestroyEval
+      end
+      item
+        Name = '__LibInterface_InvokeMethod'
+        Parameters = <
+          item
+            Name = 'Namespace'
+            DataType = 'string'
+          end
+          item
+            Name = 'Instance'
+            DataType = 'integer'
+          end
+          item
+            Name = 'QualifiedClassName'
+            DataType = 'string'
+          end
+          item
+            Name = 'MethodName'
+            DataType = 'string'
+          end
+          item
+            Name = 'Args'
+            DataType = 'TVariantArray'
+          end>
+        ResultType = 'variant'
+        OnEval = dwsUnitLibraryFunctions__LibInterface_InvokeMethodEval
+      end
+      item
         Name = 'RaiseException'
         Parameters = <
           item
@@ -105,6 +174,7 @@ object ScriptUnitBaseLibrary: TScriptUnitBaseLibrary
           item
             Name = 'P1'
             DataType = 'variant'
+            HasDefaultValue = True
             DefaultValue = ''
           end
           item
@@ -180,6 +250,19 @@ object ScriptUnitBaseLibrary: TScriptUnitBaseLibrary
           end>
         Overloaded = True
         OnEval = dwsUnitLibraryFunctionsImport_stringstring_Eval
+      end>
+    Synonyms = <
+      item
+        Name = 'Double'
+        DataType = 'float'
+      end
+      item
+        Name = 'Real'
+        DataType = 'float'
+      end
+      item
+        Name = 'TDateTime'
+        DataType = 'float'
       end>
     UnitName = 'uBaseLibrary'
     StaticSymbols = False
