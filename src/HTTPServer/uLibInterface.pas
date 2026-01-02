@@ -23,8 +23,8 @@ type
     InvokeClassMethod: TInvokeClassMethod;
   end;
 
-  TLibInit = procedure(LibInterface: PLibInterface); cdecl;
-  TLibFree = procedure(LibInterface: PLibInterface); cdecl;
+  TLibInit = procedure(const LibInterface: PLibInterface); cdecl;
+  TLibFree = procedure(const LibInterface: PLibInterface); cdecl;
 
 implementation
 

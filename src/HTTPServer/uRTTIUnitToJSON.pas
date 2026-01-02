@@ -16,6 +16,9 @@ function ExportUnitClassesToJSON(const AUnitName: string): string;overload;
 
 implementation
 
+uses
+  uUtility;
+
 function VisibilityToString(V: TMemberVisibility): string;
 begin
   case V of
@@ -107,82 +110,82 @@ begin
       ClassObj := TJSONObject.Create;
       ClassesArray.AddElement(ClassObj);
 
-      ClassObj.AddPair('name', RClass.Name);
-      ClassObj.AddPair('qualifiedName', RClass.QualifiedName);
+      WriteJSONValue(ClassObj, 'name', RClass.Name);
+      WriteJSONValue(ClassObj, 'qualifiedName', RClass.QualifiedName);
 
       if Assigned(RClass.BaseType) then
-        ClassObj.AddPair('ancestor', RClass.BaseType.Name)
+        WriteJSONValue(ClassObj, 'ancestor', RClass.BaseType.Name)
       else
-        ClassObj.AddPair('ancestor', '');
+        WriteJSONValue(ClassObj, 'ancestor', '');
 
-      ClassObj.AddPair('visibility', VisibilityToString(mvPublic));
+      WriteJSONValue(ClassObj, 'visibility', VisibilityToString(mvPublic));
 
       // ===== Fields =====
       FieldsArr := TJSONArray.Create;
-      ClassObj.AddPair('fields', FieldsArr);
+      WriteJSONValue(ClassObj, 'fields', FieldsArr);
 
       for Field in RClass.GetFields do
         if Field.Parent = RType then
           begin
             FieldObj := TJSONObject.Create;
             FieldsArr.AddElement(FieldObj);
-            FieldObj.AddPair('name', Field.Name);
-            FieldObj.AddPair('type', Field.FieldType.Name);
-            FieldObj.AddPair('visibility', VisibilityToString(Field.Visibility));
-            FieldObj.AddPair('isStatic', TJSONBool.Create(Field.Offset < 0));
+            WriteJSONValue(FieldObj,'name', Field.Name);
+            WriteJSONValue(FieldObj,'type', Field.FieldType.Name);
+            WriteJSONValue(FieldObj,'visibility', VisibilityToString(Field.Visibility));
+            WriteJSONValue(FieldObj,'isStatic', (Field.Offset < 0));
           end;
 
       // ===== Properties =====
       PropsArr := TJSONArray.Create;
-      ClassObj.AddPair('properties', PropsArr);
+      WriteJSONValue(ClassObj,'properties', PropsArr);
 
       for Prop in RClass.GetProperties do
         if Prop.Parent = RType then
           begin
             PropObj := TJSONObject.Create;
             PropsArr.AddElement(PropObj);
-            PropObj.AddPair('name', Prop.Name);
-            PropObj.AddPair('type', Prop.PropertyType.Name);
-            PropObj.AddPair('visibility', VisibilityToString(Prop.Visibility));
-            PropObj.AddPair('readable', TJSONBool.Create(Prop.IsReadable));
-            PropObj.AddPair('writable', TJSONBool.Create(Prop.IsWritable));
+            WriteJSONValue(PropObj, 'name', Prop.Name);
+            WriteJSONValue(PropObj, 'type', Prop.PropertyType.Name);
+            WriteJSONValue(PropObj, 'visibility', VisibilityToString(Prop.Visibility));
+            WriteJSONValue(PropObj, 'readable', Prop.IsReadable);
+            WriteJSONValue(PropObj, 'writable', Prop.IsWritable);
           end;
 
       // ===== Methods =====
       MethodsArr := TJSONArray.Create;
-      ClassObj.AddPair('methods', MethodsArr);
+      WriteJSONValue(ClassObj, 'methods', MethodsArr);
 
       for Method in RClass.GetMethods do
         if Method.Parent = RType then
           begin
             MethodObj := TJSONObject.Create;
             MethodsArr.AddElement(MethodObj);
-            MethodObj.AddPair('name', Method.Name);
-            MethodObj.AddPair('kind', MethodKindToString(Method.MethodKind));
-            MethodObj.AddPair('visibility', VisibilityToString(Method.Visibility));
-            MethodObj.AddPair('isClassMethod', TJSONBool.Create(Method.IsClassMethod));
-            MethodObj.AddPair('callingConvention', GetEnumName(TypeInfo(TCallConv), Ord(Method.CallingConvention)));
+            WriteJSONValue(MethodObj, 'name', Method.Name);
+            WriteJSONValue(MethodObj, 'kind', MethodKindToString(Method.MethodKind));
+            WriteJSONValue(MethodObj, 'visibility', VisibilityToString(Method.Visibility));
+            WriteJSONValue(MethodObj, 'isClassMethod', Method.IsClassMethod);
+            WriteJSONValue(MethodObj, 'callingConvention', GetEnumName(TypeInfo(TCallConv), Ord(Method.CallingConvention)));
 
             if Assigned(Method.ReturnType) then
-              MethodObj.AddPair('returnType', Method.ReturnType.Name)
+              WriteJSONValue(MethodObj, 'returnType', Method.ReturnType.Name)
             else
-              MethodObj.AddPair('returnType', '');
+              WriteJSONValue(MethodObj, 'returnType', '');
 
             // ===== Parameters =====
             ParamsArr := TJSONArray.Create;
-            MethodObj.AddPair('parameters', ParamsArr);
+            WriteJSONValue(MethodObj, 'parameters', ParamsArr);
 
             for Param in Method.GetParameters do
               begin
                 ParamObj := TJSONObject.Create;
                 ParamsArr.AddElement(ParamObj);
-                ParamObj.AddPair('name', Param.Name);
+                WriteJSONValue(ParamObj, 'name', Param.Name);
                 if Assigned(Param.ParamType) then
-                  ParamObj.AddPair('type', Param.ParamType.Name)
+                  WriteJSONValue(ParamObj, 'type', Param.ParamType.Name)
                 else
-                  ParamObj.AddPair('type', '');
-                ParamObj.AddPair('kind', ParamFlagsToString(Param.Flags));
-                ParamObj.AddPair('flags', ParamFlagsToJSON(Param.Flags));
+                  WriteJSONValue(ParamObj, 'type', '');
+                WriteJSONValue(ParamObj, 'kind', ParamFlagsToString(Param.Flags));
+                WriteJSONValue(ParamObj, 'flags', ParamFlagsToJSON(Param.Flags));
               end;
           end;
     end;

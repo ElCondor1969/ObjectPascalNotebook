@@ -3,15 +3,15 @@ unit uUtility;
 interface
 
 uses
-  Classes, SysUtils, DateUtils, Variants, JSON, dwsDataContext, dwsExprs, dwsInfo;
+  Classes, SysUtils, DateUtils, Variants, JSON;
 
 type
+  TStringArray=array of string;
   TVarRecArray=array of TVarRec;
 
 function AnsiPosEx(SottoStringa,Stringa:string;Posizione:integer=1):integer;
 procedure RaiseException(const AMessage:string);overload;
 procedure RaiseException(const AMessage:string;const Args:array of const);overload;
-function DecodificaArrayOfConst(Info:TProgramInfo;const NomeParametro:string):TVarRecArray;
 procedure DistruggiVarRec(var Valore:TVarRec);
 function VariantToVarRec(Valore:variant):TVarRec;
 function VarRecToVariant(Valore:TVarRec):variant;
@@ -28,15 +28,40 @@ function MIMEFromFileExtension(Extension:string):string;
 function SeNullo(const ValoreSottoTest,ValoreSostitutivo:variant):variant;
 function GenerateID(IDLength:integer=16;IDNumericFlag:boolean=false):string;
 procedure Async(AProcedure:TProc);
+procedure Sync(AProcedure:TThreadProcedure; Wait:boolean=false);
 function ParseJSONObject(AString:string):TJSONobject;
 function ReadJSONValue(AJSON:TJSONObject;const Name:string;DefaultValue:integer):integer;overload;
+function ReadJSONValue(AJSON:TJSONValue;const Name:string;DefaultValue:integer):integer;overload;
 function ReadJSONValue(AJSON:TJSONObject;const Name:string;DefaultValue:boolean):boolean;overload;
+function ReadJSONValue(AJSON:TJSONValue;const Name:string;DefaultValue:boolean):boolean;overload;
 function ReadJSONValue(AJSON:TJSONObject;const Name:string;DefaultValue:string):string;overload;
+function ReadJSONValue(AJSON:TJSONValue;const Name:string;DefaultValue:string):string;overload;
+function ReadJSONArrayCount(AJSON:TJSONObject;const Name:string):integer;overload;
+function ReadJSONArrayCount(AJSON:TJSONValue;const Name:string):integer;overload;
+function ReadJSONArray(AJSON:TJSONObject;const Name:string):TJSONArray;overload;
+function ReadJSONArray(AJSON:TJSONValue;const Name:string):TJSONArray;overload;
+function WriteJSONValue(AJSON:TJSONObject;const Name:string;Value:integer):integer;overload;
+function WriteJSONValue(AJSON:TJSONObject;const Name:string;Value:boolean):boolean;overload;
+function WriteJSONValue(AJSON:TJSONObject;const Name:string;Value:string):string;overload;
+function WriteJSONValue(AJSON:TJSONObject;const Name:string;Value:TJSONArray):TJSONArray;overload;
+function AddJSONElement(AJSON:TJSONArray;Element:TJSONArray):TJSONArray;overload;
+function AddJSONElement(AJSON:TJSONArray;Element:TJSONObject):TJSONObject;overload;
 
 implementation
 
-var StringIDCharacterSource:string;
-    StringIDCharacterSourceLength:integer;
+type
+  TSyncThread=class(TThread)
+  private
+    FProc: TThreadProcedure;
+  protected
+    procedure Execute;override;
+  public
+    constructor Create(AProc: TThreadProcedure; Wait:boolean=false);
+  end;
+
+var 
+  StringIDCharacterSource:string;
+  StringIDCharacterSourceLength:integer;
 
 function ParseJSONObject(AString:string):TJSONobject;
 begin
@@ -49,16 +74,92 @@ begin
     Result:=DefaultValue;
 end;
 
+function ReadJSONValue(AJSON:TJSONValue;const Name:string;DefaultValue:integer):integer;
+begin
+  Result:=ReadJSONValue(AJSON as TJSONObject,Name,DefaultValue);
+end;
+
 function ReadJSONValue(AJSON:TJSONObject;const Name:string;DefaultValue:boolean):boolean;
 begin
   if (not(AJSON.TryGetValue<boolean>(Name,Result))) then
     Result:=DefaultValue;
 end;
 
+function ReadJSONValue(AJSON:TJSONValue;const Name:string;DefaultValue:boolean):boolean;
+begin
+  Result:=ReadJSONValue(AJSON as TJSONObject,Name,DefaultValue);
+end;
+
 function ReadJSONValue(AJSON:TJSONObject;const Name:string;DefaultValue:string):string;
 begin
   if (not(AJSON.TryGetValue<string>(Name,Result))) then
     Result:=DefaultValue;
+end;
+
+function ReadJSONValue(AJSON:TJSONValue;const Name:string;DefaultValue:string):string;
+begin
+  Result:=ReadJSONValue(AJSON as TJSONObject,Name,DefaultValue);
+end;
+
+function ReadJSONArray(AJSON:TJSONObject;const Name:string):TJSONArray;
+begin
+  Result:=AJSON.GetValue(Name) as TJSONArray;
+end;
+
+function ReadJSONArray(AJSON:TJSONValue;const Name:string):TJSONArray;
+begin
+  Result:=ReadJSONArray(AJSON as TJSONObject,Name);
+end;
+
+function ReadJSONArrayCount(AJSON:TJSONObject;const Name:string):integer;
+var Value:TJSONArray;
+begin
+  Value:=ReadJSONArray(AJSON,Name);
+  if Assigned(Value) then
+    Result:=Value.Count
+  else
+    Result:=0;
+end;
+
+function ReadJSONArrayCount(AJSON:TJSONValue;const Name:string):integer;
+begin
+  Result:=ReadJSONArrayCount(AJSON as TJSONObject,Name);
+end;
+
+function WriteJSONValue(AJSON:TJSONObject;const Name:string;Value:integer):integer;
+begin
+  AJSON.AddPair(TJSONPair.Create(Name, TJSONNumber.Create(Value)));
+  Result:=Value;
+end;
+
+function WriteJSONValue(AJSON:TJSONObject;const Name:string;Value:boolean):boolean;
+begin
+  AJSON.AddPair(TJSONPair.Create(Name, TJSONBool.Create(Value)));
+  Result:=Value;
+end;
+
+function WriteJSONValue(AJSON:TJSONObject;const Name:string;Value:string):string;
+begin
+  AJSON.AddPair(Name, Value);
+  Result:=Value;
+end;
+
+function WriteJSONValue(AJSON:TJSONObject;const Name:string;Value:TJSONArray):TJSONArray;
+begin
+  AJSON.AddPair(Name, Value);
+  Result:=Value;
+end;
+
+function AddJSONElement(AJSON,Element:TJSONArray):TJSONArray;
+begin
+  AJSON.Add(Element);
+  Result:=Element;
+end;
+
+function AddJSONElement(AJSON:TJSONArray;Element:TJSONObject):TJSONObject;
+begin
+  AJSON.Add(Element);
+  Result:=Element;
 end;
 
 procedure RaiseException(const AMessage:string);
@@ -256,24 +357,6 @@ begin
       UnicodeString(Valore.VUnicodeString):=UnicodeString('');
   end;
   Finalize(Valore);
-end;
-
-function DecodificaArrayOfConst(Info:TProgramInfo;const NomeParametro:string):TVarRecArray;
-var k:integer;
-    InfoArgs:IInfo;
-begin
-  try
-    try
-      InfoArgs:=Info.Vars[NomeParametro];
-      SetLength(Result,InfoArgs.Member['length'].ValueAsInteger);
-      for k:=0 to High(Result) do
-        Result[k]:=VariantToVarRec(InfoArgs.Element(k).Value);
-    finally
-      InfoArgs:=nil;
-    end;
-  except
-    Finalize(Result);
-  end;
 end;
 
 function GetFileExtension(const FileName:string):string;
@@ -700,6 +783,34 @@ end;
 procedure Async(AProcedure:TProc);
 begin
   TThread.CreateAnonymousThread(AProcedure).Start;
+end;
+
+procedure Sync(AProcedure:TThreadProcedure; Wait:boolean);
+var Thread: TTHread;
+begin
+  Thread := TSyncThread.Create(AProcedure, Wait);
+  if Wait then
+    with Thread do
+      try
+        WaitFor;
+      finally
+        Free;
+      end;
+end;
+
+{ TSyncThread }
+
+constructor TSyncThread.Create(AProc: TThreadProcedure; Wait:boolean=false);
+begin
+  inherited Create(true);
+  FProc:=AProc;
+  FreeOnTerminate:=not Wait;
+  Resume;
+end;
+
+procedure TSyncThread.Execute;
+begin
+  Synchronize(FProc);
 end;
 
 initialization

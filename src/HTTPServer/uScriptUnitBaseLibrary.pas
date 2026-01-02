@@ -5,12 +5,11 @@ interface
 uses
   System.SysUtils, System.Classes, Variants, Generics.Collections, Types, JSON,
   dwsComp, dwsExprs, dwsExprList, dwsCompiler, dwsFunctions, dwsSymbols, dwsDataContext,
-  dwsInfo, uScriptExecuter;
+  dwsInfo, uScriptExecuter, uUtility;
 
 type
   TScriptUnitBaseLibrary = class(TDataModule)
     dwsUnitLibrary: TdwsUnit;
-    procedure dwsUnitLibraryClassesTDestroyerCleanUp(ExternalObject: TObject);
     procedure dwsUnitLibraryFunctions__DestroyObjectEval(
       info: TProgramInfo);
     procedure dwsUnitLibraryFunctions__ArrayToVariantEval(info: TProgramInfo);
@@ -34,6 +33,7 @@ type
   private
     { Private declarations }
     FScriptExecuter:TScriptExecuter;
+    function DecodificaArrayOfConst(Info:TProgramInfo;const NomeParametro:string):TVarRecArray;
     function GetVariablesDictionary:TDictionary<string,variant>;
     function AggiustaLetturaVariabileData(Valore:variant):variant;
     procedure ReplaceScriptDynArrayData(ScriptDynArray:IScriptDynArray;Dati:TData);
@@ -50,7 +50,7 @@ implementation
 {$R *.dfm}
 
 uses
-  uUtility, uDWSScripter, uLibInterface;
+  uDWSScripter, uLibInterface;
 
 type
   _TDataContext=class(TDataContext);
@@ -76,6 +76,25 @@ begin
   dwsUnitLibrary.Script:=ScriptExecuter.DelphiWebScript;
 end;
 
+function TScriptUnitBaseLibrary.DecodificaArrayOfConst(Info: TProgramInfo;
+  const NomeParametro: string): TVarRecArray;
+var k:integer;
+    InfoArgs:IInfo;
+begin
+  try
+    try
+      InfoArgs:=Info.Vars[NomeParametro];
+      SetLength(Result,InfoArgs.Member['length'].ValueAsInteger);
+      for k:=0 to High(Result) do
+        Result[k]:=VariantToVarRec(InfoArgs.Element(k).Value);
+    finally
+      InfoArgs:=nil;
+    end;
+  except
+    Finalize(Result);
+  end;
+end;
+
 procedure TScriptUnitBaseLibrary.dwsLibreryUnitFunctionsRestartEval(
   info: TProgramInfo);
 begin
@@ -86,12 +105,6 @@ procedure TScriptUnitBaseLibrary.dwsUnitLibraryClassesTConsoleMethodsWriteLnEval
   Info: TProgramInfo; ExtObject: TObject);
 begin
   FScriptExecuter.AddConsoleOutputRow(Info.ValueAsString['AMessage']);
-end;
-
-procedure TScriptUnitBaseLibrary.
-            dwsUnitLibraryClassesTDestroyerCleanUp(ExternalObject:TObject);
-begin
-  DestroyObject(ExternalObject);
 end;
 
 procedure TScriptUnitBaseLibrary.dwsUnitLibraryFunctionsWriteLnEval(

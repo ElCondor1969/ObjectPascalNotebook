@@ -52,7 +52,7 @@ end;
 procedure FreeDynLib(Lib: TDynLibHandle);
 begin
 {$IFDEF MSWINDOWS}
-  FreeLibrary(HMODULE(Lib));
+  FreeLibrary(TDynLibHandle(Lib));
 {$ELSE}
   dlclose(Pointer(Lib));
 {$ENDIF}

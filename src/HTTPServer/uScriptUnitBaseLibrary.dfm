@@ -26,11 +26,6 @@ object ScriptUnitBaseLibrary: TScriptUnitBaseLibrary
       end>
     Classes = <
       item
-        Name = 'TDestroyer'
-        IsAbstract = True
-        OnCleanUp = dwsUnitLibraryClassesTDestroyerCleanUp
-      end
-      item
         Name = 'TConsole'
         IsSealed = True
         Methods = <
