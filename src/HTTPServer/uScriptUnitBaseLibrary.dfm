@@ -33,11 +33,191 @@ object ScriptUnitBaseLibrary: TScriptUnitBaseLibrary
             Name = 'WriteLn'
             Parameters = <
               item
-                Name = 'AMessage'
-                DataType = 'string'
+                Name = 'P1'
+                DataType = 'variant'
+                HasDefaultValue = True
+                DefaultValue = ''
+              end
+              item
+                Name = 'P2'
+                DataType = 'variant'
+                HasDefaultValue = True
+                DefaultValue = ''
+              end
+              item
+                Name = 'P3'
+                DataType = 'variant'
+                HasDefaultValue = True
+                DefaultValue = ''
+              end
+              item
+                Name = 'P4'
+                DataType = 'variant'
+                HasDefaultValue = True
+                DefaultValue = ''
+              end
+              item
+                Name = 'P5'
+                DataType = 'variant'
+                HasDefaultValue = True
+                DefaultValue = ''
+              end
+              item
+                Name = 'P6'
+                DataType = 'variant'
+                HasDefaultValue = True
+                DefaultValue = ''
+              end
+              item
+                Name = 'P7'
+                DataType = 'variant'
+                HasDefaultValue = True
+                DefaultValue = ''
+              end
+              item
+                Name = 'P8'
+                DataType = 'variant'
+                HasDefaultValue = True
+                DefaultValue = ''
+              end
+              item
+                Name = 'P9'
+                DataType = 'variant'
+                HasDefaultValue = True
+                DefaultValue = ''
+              end
+              item
+                Name = 'P10'
+                DataType = 'variant'
+                HasDefaultValue = True
+                DefaultValue = ''
               end>
             OnEval = dwsUnitLibraryClassesTConsoleMethodsWriteLnEval
             Kind = mkClassProcedure
+          end
+          item
+            Name = 'Write'
+            Parameters = <
+              item
+                Name = 'P1'
+                DataType = 'variant'
+                HasDefaultValue = True
+                DefaultValue = ''
+              end
+              item
+                Name = 'P2'
+                DataType = 'variant'
+                HasDefaultValue = True
+                DefaultValue = ''
+              end
+              item
+                Name = 'P3'
+                DataType = 'variant'
+                HasDefaultValue = True
+                DefaultValue = ''
+              end
+              item
+                Name = 'P4'
+                DataType = 'variant'
+                HasDefaultValue = True
+                DefaultValue = ''
+              end
+              item
+                Name = 'P5'
+                DataType = 'variant'
+                HasDefaultValue = True
+                DefaultValue = ''
+              end
+              item
+                Name = 'P6'
+                DataType = 'variant'
+                HasDefaultValue = True
+                DefaultValue = ''
+              end
+              item
+                Name = 'P7'
+                DataType = 'variant'
+                HasDefaultValue = True
+                DefaultValue = ''
+              end
+              item
+                Name = 'P8'
+                DataType = 'variant'
+                HasDefaultValue = True
+                DefaultValue = ''
+              end
+              item
+                Name = 'P9'
+                DataType = 'variant'
+                HasDefaultValue = True
+                DefaultValue = ''
+              end
+              item
+                Name = 'P10'
+                DataType = 'variant'
+                HasDefaultValue = True
+                DefaultValue = ''
+              end>
+            OnEval = dwsUnitLibraryClassesTConsoleMethodsWriteEval
+            Kind = mkClassProcedure
+          end
+          item
+            Name = 'Clear'
+            OnEval = dwsUnitLibraryClassesTConsoleMethodsClearEval
+            Kind = mkClassProcedure
+          end
+          item
+            Name = 'WriteBlock'
+            Parameters = <
+              item
+                Name = 'Text'
+                DataType = 'string'
+              end
+              item
+                Name = 'IDBlockRef'
+                DataType = 'string'
+                HasDefaultValue = True
+                DefaultValue = #39#39
+              end
+              item
+                Name = 'Position'
+                DataType = 'TConsoleOutputBlockPosition'
+                HasDefaultValue = True
+                DefaultValue = 0
+              end>
+            ResultType = 'string'
+            OnEval = dwsUnitLibraryClassesTConsoleMethodsWriteBlockEval
+            Kind = mkClassFunction
+          end
+          item
+            Name = 'DeleteBlock'
+            Parameters = <
+              item
+                Name = 'IDBlock'
+                DataType = 'string'
+              end>
+            OnEval = dwsUnitLibraryClassesTConsoleMethodsDeleteBlockEval
+            Kind = mkClassProcedure
+          end>
+      end>
+    Enumerations = <
+      item
+        Name = 'TConsoleOutputBlockPosition'
+        Elements = <
+          item
+            Name = 'bpAdd'
+          end
+          item
+            Name = 'bpReplace'
+          end
+          item
+            Name = 'bpDelete'
+          end
+          item
+            Name = 'bpPrior'
+          end
+          item
+            Name = 'bpNext'
           end>
       end>
     Functions = <
@@ -162,6 +342,71 @@ object ScriptUnitBaseLibrary: TScriptUnitBaseLibrary
           end>
         Overloaded = True
         OnEval = dwsUnitLibraryFunctionsRaiseException_Args_Eval
+      end
+      item
+        Name = 'Write'
+        Parameters = <
+          item
+            Name = 'P1'
+            DataType = 'variant'
+            HasDefaultValue = True
+            DefaultValue = ''
+          end
+          item
+            Name = 'P2'
+            DataType = 'variant'
+            HasDefaultValue = True
+            DefaultValue = ''
+          end
+          item
+            Name = 'P3'
+            DataType = 'variant'
+            HasDefaultValue = True
+            DefaultValue = ''
+          end
+          item
+            Name = 'P4'
+            DataType = 'variant'
+            HasDefaultValue = True
+            DefaultValue = ''
+          end
+          item
+            Name = 'P5'
+            DataType = 'variant'
+            HasDefaultValue = True
+            DefaultValue = ''
+          end
+          item
+            Name = 'P6'
+            DataType = 'variant'
+            HasDefaultValue = True
+            DefaultValue = ''
+          end
+          item
+            Name = 'P7'
+            DataType = 'variant'
+            HasDefaultValue = True
+            DefaultValue = ''
+          end
+          item
+            Name = 'P8'
+            DataType = 'variant'
+            HasDefaultValue = True
+            DefaultValue = ''
+          end
+          item
+            Name = 'P9'
+            DataType = 'variant'
+            HasDefaultValue = True
+            DefaultValue = ''
+          end
+          item
+            Name = 'P10'
+            DataType = 'variant'
+            HasDefaultValue = True
+            DefaultValue = ''
+          end>
+        OnEval = dwsUnitLibraryFunctionsWriteEval
       end
       item
         Name = 'WriteLn'

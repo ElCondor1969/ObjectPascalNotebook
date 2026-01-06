@@ -28,19 +28,21 @@ end;
 procedure TServerExecuteCommand.Execute(Server:TIdHTTPServer;ARequestInfo:TIdHTTPRequestInfo;AResponseInfo:TIdHTTPResponseInfo);
 var
   Body,Response:TJSONObject;
-  NotebookId,Script:string;
+  NotebookId,NotebookPath,Script:string;
   Context:TExecutionContext;
 begin
   Body:=ParseJSONObject(GetRequestBody(ARequestInfo));
   try
     Response:=TJSONObject.Create;
     NotebookId:=Trim(ReadJSONValue(Body,'notebookId',''));
+    NotebookPath:=Trim(ReadJSONValue(Body,'notebookPath',''));
     if (NotebookId='') then
       RaiseException('NotebookId missing');
     Script:=Trim(ReadJSONValue(Body,'code',''));
     if (Script='') then
       RaiseException('Nothing to execute');
     Context:=TExecutionContext.Get(NotebookId);
+    Context.NotebookPath:=NotebookPath;
     Context.Execute(Script);
     Response.AddPair('executionId',Context.ExecutionId);
     AResponseInfo.ContentType:='application/json';

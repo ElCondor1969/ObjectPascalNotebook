@@ -1,0 +1,69 @@
+{
+  "cells": [
+    {
+      "kind": "code",
+      "value": "Restart; // Execute for release all resources and restart the execution of the notebook.",
+      "language": "ObjectPascal"
+    },
+    {
+      "kind": "markdown",
+      "value": "To write to the cell output, use the **Write** and **WriteLn** procedures, also of the **TConsole** system class.",
+      "language": "markdown"
+    },
+    {
+      "kind": "code",
+      "value": "WriteLn('One','Two');\r\nTConsole.Write('A','B');\r\nTConsole.WriteLn('C');",
+      "language": "ObjectPascal"
+    },
+    {
+      "kind": "markdown",
+      "value": "For clear the Output, use the **Clear** procedure.",
+      "language": "markdown"
+    },
+    {
+      "kind": "code",
+      "value": "WriteLn('String that nobody will read');\r\nTConsole.Clear;\r\nTConsole.WriteLn('I''m the only output');",
+      "language": "ObjectPascal"
+    },
+    {
+      "kind": "markdown",
+      "value": "The **WriteBlock** function allows you to write portions of output that can be modified later.\r\nThe method prototype is as follows:\r\n\r\n**function** WriteBlock(**const** Text: **string**; IDBlockRef: **string**=''; Position: TConsoleOutputBlockPosition = bpAdd): **string**;\r\n\r\nwhere:\r\n\r\nTConsoleOutputBlockPosition= (bpAdd, bpReplace, bpDelete, bpPrior, bpNext);\r\n\r\n- **Text** is the text you want to write to the output.\r\n- **IDBlockRef** is the block you want to write to or the reference block.\r\n- **Position** indicates how to operate.\r\n- *bpAdd* will append a new block to the end of the cell's output if **IDBlockRef** is passed null or does not match an existing block. If **IDBlockRef** actually finds an existing block, then the same operation as *bpReplace* is performed.\r\n- *bpReplace* replaces the block found by **IDBlockRef** with the value in **Text**; if the block is not found, then the same operation as *bpAdd* is performed.\r\n- *bpDelete* removes the block found by **IDBlockRef** from the output.\r\n- *bpPrior* creates a new block immediately before the one found by **IDBlockRef**.\r\n- *bpNext* creates a new block immediately after the one found by **IDBlockRef**.\r\n\r\nThe **WriteBlock** function returns the same value as the **IDBlockRef** parameter unless it is passed as null or the operation creates a new block; in these two cases, the returned value will be the ID of the newly generated block.",
+      "language": "markdown"
+    },
+    {
+      "kind": "code",
+      "value": "TConsole.WriteBlock('My name is <b>Sergio</b>','blk1');\r\nSleep(2000);\r\nTConsole.WriteBlock('Now is <b>Sergio Rossi</b>','blk1');\r\nSleep(2000);\r\nTConsole.WriteBlock('What''s your name?<br>','blk1', bpPrior);",
+      "language": "ObjectPascal"
+    },
+    {
+      "kind": "markdown",
+      "value": "You can generate complex and dynamic output, as the following example cells show.",
+      "language": "markdown"
+    },
+    {
+      "kind": "code",
+      "value": "procedure CreateStyleProgressBar;\r\nbegin\r\n  Write(#' \r\n    <style>\r\n        .progress-container {\r\n            width: 100%;\r\n            max-width: 400px;\r\n            background-color: #e0e0e0;\r\n            border-radius: 8px;\r\n            overflow: hidden;\r\n            position: relative;\r\n            height: 30px;\r\n        }\r\n\r\n        .progress-bar {\r\n            height: 100%;\r\n            background-color: #4caf50;\r\n            transition: width 0.3s ease;\r\n        }\r\n\r\n        .progress-text {\r\n            position: absolute;\r\n            width: 100%;\r\n            height: 100%;\r\n            top: 0;\r\n            left: 0;\r\n            display: flex;\r\n            align-items: center;\r\n            justify-content: center;\r\n            font-weight: bold;\r\n            color: #000;\r\n        }\r\n    </style>\r\n  ');\r\nend;",
+      "language": "ObjectPascal"
+    },
+    {
+      "kind": "code",
+      "value": "procedure UpdateProgressBar(const Perc: float);\r\nbegin\r\n  var PercStr:=FloatToStr(Perc)+'%';\r\n  var Output:array of string=[\r\n    '<div class=\"progress-container\">',\r\n    '  <div class=\"progress-bar\" style=\"width: %s;\"></div>',\r\n    '  <div class=\"progress-text\">%s</div>',\r\n    '</div>'\r\n  ];\r\n  TConsole.WriteBlock(Format(Output.Join(' '),[PercStr, PercStr]), 'Blk1');\r\nend;",
+      "language": "ObjectPascal"
+    },
+    {
+      "kind": "code",
+      "value": "WriteLn('Operation started...');\r\nCreateStyleProgressBar;\r\nUpdateProgressBar(0);\r\nSleep(1000);\r\nUpdateProgressBar(10);\r\nSleep(2000);\r\nUpdateProgressBar(40);\r\nSleep(1000);\r\nUpdateProgressBar(75);\r\nSleep(2000);\r\nUpdateProgressBar(90);\r\nSleep(1000);\r\nUpdateProgressBar(100);\r\nWriteLn('Done!');\r\n",
+      "language": "ObjectPascal"
+    },
+    {
+      "kind": "markdown",
+      "value": "To delete a block, use the **DeleteBlock** statement.",
+      "language": "markdown"
+    },
+    {
+      "kind": "code",
+      "value": "WriteLn('A generic text.');\r\nTCOnsole.WriteBlock('Tic...toc...tic...toc...','blk1');\r\nSleep(3000);\r\nTCOnsole.DeleteBlock('blk1');",
+      "language": "ObjectPascal"
+    }
+  ]
+}

@@ -20,6 +20,9 @@ type
       var scriptSource: string);
   private
     { Private declarations }
+    const
+      ConsoleOutputStartBlockTemplate='<!-- _console_output_start_%s_ -->';
+      ConsoleOutputEndBlockTemplate='<!-- _console_output_end_%s_ -->';
     type
       TUnitSearchInfo=record
         Namespace: string;
@@ -31,7 +34,7 @@ type
         FScriptExecuter: TScriptExecuter;
         FDict:TDictionary<string,TUnitSearchInfo>;
         FLibraryDict:TDictionary<string,TLibInterface>;
-        procedure RemoveNamespace(const ANamespace:string);
+        procedure CheckNamespace(const ANamespace:string);
         procedure FreeLibrary(const ANamespace:string);
       public
         constructor Create(AScriptExecuter: TScriptExecuter);
@@ -40,15 +43,17 @@ type
         procedure ImportFromPath(const ANamespace,APath:string);
         procedure ImportFromLibrary(const ANamespace,ALibraryName:string);
         procedure AddUnit(const ANamespace,AUnitName,AUnitSource:string);
-        function GetUnitCode(const UnitName:string):string;
+        function GetUnitCode(const UnitName:string;Shrink:boolean=false):string;
       end;
   private
     { Private declarations }
+    FExecutionPath:string;
     FVariablesDictionary:TDictionary<string,variant>;
     FUnitTypeAddedDictionary:TDictionary<string,TStringArray>;
     FUnitSearch:TUnitSearch;
     FProgram:IdwsProgram;
     FExecution:IdwsProgramExecution;
+    FDestroying:boolean;
     procedure InjectUnit(var Script:string);
     function GetMustRestartFlag:boolean;
     procedure SetMustRestartFlag(const Value:boolean);
@@ -59,13 +64,22 @@ type
     function GetUnitList:string;virtual;
   public
     { Public declarations }
-    function ExecuteScript(Script:string):string;overload;
-    function ExecuteScript(Script:string;InitialVariables:TDictionary<string,variant>):string;overload;
+    type
+      TConsoleOutputBlockPosition=(bpAdd,bpReplace,bpDelete,bpPrior,bpNext);
+  public
+    { Public declarations }
+    function ExecuteScript(Script:string;InternalExecution:boolean=false):string;overload;
+    function ExecuteScript(Script:string;InitialVariables:TDictionary<string,variant>;InternalExecution:boolean=false):string;overload;
     function GetConsoleOutput:string;
-    procedure AddConsoleOutputRow(const AMessage:string);
+    procedure SetConsoleOutput(const Value:string);
+    procedure AddConsoleOutputRow(const AMessage:string;BreakLine:boolean=true);
+    procedure ClearConsoleOutput;
+    function WriteConsoleOutputBlock(const Text:string;IDBlockRef:string='';Position:TConsoleOutputBlockPosition=bpAdd):string;
+    function GetConsoleOutputBlockPosition(const Output,IDBlock:string;out StartPos,EndPos:integer):boolean;
     procedure Import(const ANamespace,AValue:string);
     procedure AddUnit(const ANamespace,AUnitName,AUnitText:string;TypeAddedList:TStringArray);
     function GetLibInterface(const ANamespace:string):TLibInterface;
+    property ExecutionPath:string read FExecutionPath write FExecutionPath;
     property VariablesDictionary:TDictionary<string,variant> read FVariablesDictionary;
     property MustRestartFlag:boolean read GetMustRestartFlag write SetMustRestartFlag;
   end;
@@ -179,13 +193,13 @@ begin
     end;
 end;
 
-procedure TScriptExecuter.TUnitSearch.RemoveNamespace(const ANamespace: string);
+procedure TScriptExecuter.TUnitSearch.CheckNamespace(const ANamespace: string);
 var
   Pair: TPair<string,TUnitSearchInfo>;
 begin
   for Pair in FDict.toArray do
     if (Pair.Value.Namespace=ANamespace) then
-      FDict.Remove(Pair.Key);
+      RaiseException('Namespace already exists');
 end;
 
 procedure TScriptExecuter.TUnitSearch.AddUnit(const ANamespace, AUnitName, AUnitSource: string);
@@ -212,7 +226,7 @@ var
   LengthValue:integer;
   UnitSearchInfo:TUnitSearchInfo;
 begin
-  RemoveNamespace(ANamespace);
+  CheckNamespace(ANamespace);
   FileList:=TDirectory.GetFiles(
     APath,
     '*.*',
@@ -242,16 +256,13 @@ begin
         if Match.Success then
           Delete(UnitTextCopy,Match.Index,Match.Length);
       until (not Match.Success);
-      Match:=TRegEx.Match(UnitTextCopy,'/unit\s+(\S+)\s*;',[roIgnoreCase,roMultiLine]);
+      Match:=TRegEx.Match(UnitTextCopy,'unit\s+(\S+)\s*;',[roIgnoreCase,roMultiLine]);
       if (Match.Success) then
         UnitName:=Match.Groups[1].Value
       else
         UnitName:=GetFileName(Element);
-      with FScriptExecuter do
-        begin
-          InjectUnit(UnitText);
-          AddUnit(ANameSpace,UnitName,UnitText,[]);
-        end;
+      FScriptExecuter.InjectUnit(UnitText);
+      FScriptExecuter.AddUnit(ANameSpace,UnitName,UnitText,[]);
     end;
 end;
 
@@ -266,7 +277,7 @@ begin
   if (Value = 0) then
     RaiseException('Error loading library: %s',[ALibraryName]);
   try
-    RemoveNamespace(ANamespace);
+    CheckNamespace(ANamespace);
     LibInit := TLibInit(GetDynProc(Value, 'LibInit'));
     LibInterface := Default(TLibInterface);
     with LibInterface do
@@ -284,14 +295,21 @@ begin
   end;
 end;
 
-function TScriptExecuter.TUnitSearch.GetUnitCode(const UnitName:string):string;
+function TScriptExecuter.TUnitSearch.GetUnitCode(const UnitName:string;Shrink:boolean):string;
 var
   UnitSearchInfo:TUnitSearchInfo;
 begin
   if (not(FDict.TryGetValue(UnitName,UnitSearchInfo))) then
     Result:=''
   else
-    Result:=UnitSearchInfo.Source;
+    begin
+      Result:=UnitSearchInfo.Source;
+      if (Shrink) then
+        begin
+          UnitSearchInfo.Source:='';
+          FDict.AddOrSetValue(UnitName,UnitSearchInfo);
+        end;
+    end;
 end;
 
 { TScriptExecuter }
@@ -312,12 +330,19 @@ end;
 
 procedure TScriptExecuter.BeforeDestruction;
 begin
+  FDestroying:=true;
+  ExecuteScript(''); // Release all resources;
   inherited;
   FVariablesDictionary.Free;
   FUnitTypeAddedDictionary.Free;
   FUnitSearch.Free;
   FExecution:=nil;
   FProgram:=nil;
+end;
+
+procedure TScriptExecuter.ClearConsoleOutput;
+begin
+  SetConsoleOutput('');
 end;
 
 procedure TScriptExecuter.DelphiWebScriptInclude(const scriptName: string;
@@ -328,126 +353,215 @@ end;
 
 function TScriptExecuter.DelphiWebScriptNeedUnit(const UnitName:string;var UnitSource:string):IdwsUnit;
 begin
-  UnitSource:=FUnitSearch.GetUnitCode(UnitName);
+  UnitSource:=FUnitSearch.GetUnitCode(UnitName,true);
 end;
 
-function TScriptExecuter.ExecuteScript(Script:string):string;
+function TScriptExecuter.ExecuteScript(Script:string;InternalExecution:boolean):string;
 begin
-  Result:=ExecuteScript(Script,nil);
+  Result:=ExecuteScript(Script,nil,InternalExecution);
 end;
 
-function TScriptExecuter.ExecuteScript(Script:string;InitialVariables:TDictionary<string,variant>):string;
-var k:integer;
+function TScriptExecuter.ExecuteScript(Script:string;InitialVariables:TDictionary<string,variant>;InternalExecution:boolean):string;
+var k,h:integer;
     Errors,Error,OriginalScript,UsesList,TypeAdded:string;
-    FlagDropProgram:boolean;
+    FlagDropProgram, FlagTrickRecompile:boolean;
     Variable:TPair<string,variant>;
     UnitTypeAddedVariable:TPair<string,TStringArray>;
     SymbolList:TObjectList<TSymbol>;
-    Symbol:TSymbol;
+    Symbol,Symbol2:TSymbol;
+    Match: TMatch;
 begin
-  SymbolList:=nil;
+  //SymbolList:=nil;
+  SymbolList:=TObjectList<TSymbol>.Create(false);
   FVariablesDictionary.Clear;
-  FUnitTypeAddedDictionary.Clear;
+  if (not(InternalExecution)) then
+    FUnitTypeAddedDictionary.Clear;
   InjectUnit(Script);
   FlagDropProgram:=false;
-  if (Assigned(FProgram)) then
-    try
-      SymbolList:=TObjectList<TSymbol>.Create(false);
+  FlagTrickRecompile:=false;
+  try
+    if (Assigned(FProgram)) then
+      try
+        //SymbolList:=TObjectList<TSymbol>.Create(false);
 
-      // Preserve all symbols from the current program.
-      for k:=0 to FProgram.Table.Count do
-        SymbolList.Add(FProgram.Table.Symbols[k]);
-      
-      // Store the previously compiled script.
-      OriginalScript:=FProgram.SourceList.FindScriptSourceItem(MSG_MainModule).SourceFile.Code;
+        // Preserve all symbols from the current program.
+        for k:=0 to FProgram.Table.Count do
+          SymbolList.Add(FProgram.Table.Symbols[k]);
+        
+        // Store the previously compiled script.
+        OriginalScript:=FProgram.SourceList.FindScriptSourceItem(MSG_MainModule).SourceFile.Code;
 
-      // Recompiles the new script within the previous context.
-      FProgram.Msgs.Clear;
-      DelphiWebScript.RecompileInContext(FProgram,Script);
-      if (FProgram.Msgs.HasErrors) then
-        begin
-          // Restore the init expressions to the previous state.
-          k:=0;
-          while (k<FProgram.Table.Count) do
+        // Recompiles the new script within the previous context.
+        FProgram.Msgs.Clear;
+        DelphiWebScript.RecompileInContext(FProgram,Script);
+
+        if FProgram.Msgs.HasErrors and (FUnitTypeAddedDictionary.Count>0) then
+          for k:=0 to FProgram.Msgs.Count-1 do
+            if (FProgram.Msgs[k].IsError) then
+              begin
+                Error:=FProgram.Msgs[k].AsInfo;
+                for UnitTypeAddedVariable in FUnitTypeAddedDictionary do
+                  begin
+                    Match:=TRegEx.Match(Error,Format('Error: %s [line: [\d]+, column: [\d]+, file: %s]',[RTE_InstanceOfAbstractClass,UnitTypeAddedVariable.Key]),[roIgnoreCase,roMultiLine]);
+                    if Match.Success then
+                      begin
+                        for h:=0 to FProgram.Table.Count-1 do
+                          begin
+                            Symbol:=FProgram.Table[h];
+                            if (SymbolList.IndexOf(Symbol)=-1) then
+                              if (Symbol is TUnitSymbol) and not SameText(Symbol.Name,'uBaseLibrary') then
+                                TUnitSymbol(Symbol).Table.Initialize(FProgram.ProgramObject.CompileMsgs);
+                          end;
+                        FlagTrickRecompile:=true;
+                        Break;
+                      end;
+                  end;
+                if (FlagTrickRecompile) then
+                  Break;
+              end;
+        if (FlagTrickRecompile) then
+          try
+            FProgram.Msgs.Clear;
+            DelphiWebScript.RecompileInContext(FProgram,Script);
+          finally
+            FUnitTypeAddedDictionary.Clear;
+          end;
+
+        if FProgram.Msgs.HasErrors then
+          begin
+            // Restore the init expressions to the previous state.
+            k:=0;
+            while (k<FProgram.Table.Count) do
+              begin
+                Symbol:=FProgram.Table.Symbols[k];
+                if (SymbolList.IndexOf(Symbol)=-1) then
+                  FProgram.Table.Remove(Symbol)
+                else
+                  Inc(k);
+              end;
+
+            // Restore the previously compiled script.
+            FProgram.SourceList.FindScriptSourceItem(MSG_MainModule).SourceFile.Code:=OriginalScript;
+          end;
+      finally
+        //SymbolList.Free;
+      end
+    else
+      begin
+        FProgram:=DelphiWebScript.Compile(Script);
+        if (FProgram.Msgs.HasErrors) then
+          FlagDropProgram:=true
+        else if FDestroying then
+          FProgram.ExecutionsClass:=nil
+        else
+          FProgram.ExecutionsClass:=TOPNBProgramExecution;
+      end;
+    if (FProgram.Msgs.HasErrors) then
+      begin
+        Errors:='';
+        for k:=0 to FProgram.Msgs.Count-1 do
+          if (FProgram.Msgs[k].IsError) then
             begin
-              Symbol:=FProgram.Table.Symbols[k];
+              Error:=FProgram.Msgs[k].AsInfo;
+              AddConsoleOutputRow(Error);
+              Errors:=Errors+Error+#13#10;
+            end;
+        if (FlagDropProgram) then
+          begin
+            FExecution:=nil;
+            FProgram:=nil;
+          end;
+        RaiseException(Errors);
+      end
+    else
+      begin
+        if (Assigned(InitialVariables)) then
+          for Variable in InitialVariables.ToArray do
+            FVariablesDictionary.AddOrSetValue(Variable.Key,Variable.Value);
+        FVariablesDictionary.AddOrSetValue(varConsoleOutout,'');
+        if FDestroying then
+          begin
+            FProgram.ExecutionsClass:=nil;
+            FExecution:=nil;
+          end;
+        if (Assigned(FExecution)) then
+          FExecution.Execute(0)
+        else
+          FExecution:=FProgram.Execute;
+        if (not(FExecution.Msgs.HasErrors)) then
+          Result:=FExecution.Result.ToString
+        else
+          with FExecution.Msgs do
+            begin
+              Error:=Msgs[Count-1].Text;
+              AddConsoleOutputRow(Error);
+              RaiseException(Error);
+            end;
+
+        // !!!!!!
+        if (FUnitTypeAddedDictionary.Count>0) then
+          for k:=0 to FProgram.Table.Count-1 do
+            begin
+              Symbol:=FProgram.Table[k];
               if (SymbolList.IndexOf(Symbol)=-1) then
-                FProgram.Table.Remove(Symbol)
-              else
-                Inc(k);
+                if (Symbol is TUnitSymbol) and not SameText(Symbol.Name,'uBaseLibrary') then
+                  TUnitSymbol(Symbol).Table.Initialize(FProgram.ProgramObject.CompileMsgs);
             end;
+        // !!!!!!
 
-          // Restore the previously compiled script.
-          FProgram.SourceList.FindScriptSourceItem(MSG_MainModule).SourceFile.Code:=OriginalScript;
-        end;
-    finally
+        // If libraries have been imported, then references the units.
+        if (FUnitTypeAddedDictionary.Count>0) then
+          try
+            (* SymbolList:=TObjectList<TSymbol>.Create(false);
+            for k:=0 to FProgram.Table.Count do
+              SymbolList.Add(FProgram.Table.Symbols[k]); *)
+
+            UsesList:='';
+            Script:='';
+            for UnitTypeAddedVariable in FUnitTypeAddedDictionary do
+              begin
+                UsesList:=UsesList+UnitTypeAddedVariable.Key+',';
+                for TypeAdded in UnitTypeAddedVariable.Value do
+                  Script:=
+                    Script+
+                    Format('%s=class(%s_%s) public end;',[TypeAdded,TypeAdded,UnitTypeAddedVariable.Key])+sLineBreak;
+              end;
+            Delete(UsesList,Length(UsesList),1);
+            if (Script<>'') then
+              Script:='type'+sLineBreak+Script;
+            Script:='uses'+sLineBreak+UsesList+';'+sLineBreak+Script;
+            ExecuteScript(Script,true);
+
+            // Tricks the added class types.
+            (* Script:='';
+            for k:=0 to FProgram.Table.Count-1 do
+              begin
+                Symbol:=FProgram.Table[k];
+                if (SymbolList.IndexOf(Symbol)=-1) then
+                  if (Symbol is TClassSymbol) then
+                    Script:=
+                      Script+
+                      Format('type %s_%s=class(%s) public end;',[Symbol.Name,GenerateID(16,true),Symbol.Name])+sLineBreak
+                  else if (Symbol is TUnitSymbol) and not SameText(Symbol.Name,'uBaseLibrary') then
+                    for h:=0 to TUnitSymbol(Symbol).Table.Count-1 do
+                      begin
+                        Symbol2:=TUnitSymbol(Symbol).Table[h];
+                        if (Symbol2 is TClassSymbol) then
+                          Script:=
+                            Script+
+                            Format('type %s_%s=class(%s) public end;',[Symbol2.Name,GenerateID(16,true),Symbol2.Name])+sLineBreak;
+                      end;
+              end;
+            if (Script<>'') then
+              ExecuteScript(Script,nil); *)
+          finally
+            //SymbolList.Free;
+          end;
+      end;
+  finally
+    if (Assigned(SymbolList)) then
       SymbolList.Free;
-    end
-  else
-    begin
-      FProgram:=DelphiWebScript.Compile(Script);
-      if (FProgram.Msgs.HasErrors) then
-        FlagDropProgram:=true
-      else
-        FProgram.ExecutionsClass:=TOPNBProgramExecution;
-    end;
-  if (FProgram.Msgs.HasErrors) then
-    begin
-      Errors:='';
-      for k:=0 to FProgram.Msgs.Count-1 do
-        if (FProgram.Msgs[k].IsError) then
-          begin
-            Error:=FProgram.Msgs[k].AsInfo;
-            AddConsoleOutputRow(Error);
-            Errors:=Errors+Error+#13#10;
-          end;
-      if (FlagDropProgram) then
-        begin
-          FExecution:=nil;
-          FProgram:=nil;
-        end;
-      RaiseException(Errors);
-    end
-  else
-    begin
-      if (Assigned(InitialVariables)) then
-        for Variable in InitialVariables.ToArray do
-          FVariablesDictionary.AddOrSetValue(Variable.Key,Variable.Value);
-      FVariablesDictionary.AddOrSetValue(varConsoleOutout,'');
-      if (Assigned(FExecution)) then
-        FExecution.Execute(0)
-      else
-        FExecution:=FProgram.Execute;
-      if (not(FExecution.Msgs.HasErrors)) then
-        Result:=FExecution.Result.ToString
-      else
-        with FExecution.Msgs do
-          begin
-            Error:=Msgs[Count-1].Text;
-            AddConsoleOutputRow(Error);
-            RaiseException(Error);
-          end;
-
-      // If libraries have been imported, it acquires the imported types.
-      if (FUnitTypeAddedDictionary.Count>0) then
-        begin
-          UsesList:='';
-          Script:='';
-          for UnitTypeAddedVariable in FUnitTypeAddedDictionary do
-            begin
-              UsesList:=UsesList+UnitTypeAddedVariable.Key+',';
-              for TypeAdded in UnitTypeAddedVariable.Value do
-                Script:=
-                  Script+
-                  Format('%s=class(%s_%s) public end;',[TypeAdded,TypeAdded,UnitTypeAddedVariable.Key])+sLineBreak;
-            end;
-          Delete(UsesList,Length(UsesList),1);
-          if (Script<>'') then
-            Script:='type'+sLineBreak+Script;
-          Script:='uses'+sLineBreak+UsesList+';'+sLineBreak+Script;
-          ExecuteScript(Script,nil);
-        end;
-    end;
+  end;
 end;
 
 procedure TScriptExecuter.InjectUnit(var Script:string);
@@ -481,6 +595,77 @@ begin
   FVariablesDictionary.AddOrSetValue(varFlagRestart,Value);
 end;
 
+function TScriptExecuter.GetConsoleOutputBlockPosition(const Output,IDBlock: string;
+  out StartPos, EndPos: integer): boolean;
+begin
+  StartPos:=AnsiPosEx(Format(ConsoleOutputStartBlockTemplate,[IDBlock]),Output);
+  if (StartPos=0) then
+    begin
+      StartPos:=Length(ConsoleOutputEndBlockTemplate);
+      EndPos:=MaxInt;
+      Result:=false;
+    end
+  else
+    begin
+      EndPos:=AnsiPosEx(Format(ConsoleOutputEndBlockTemplate,[IDBlock]),Output,StartPos+1);
+      if (EndPos=0) then
+        EndPos:=MaxInt
+      else
+        Inc(EndPos,Length(Format(ConsoleOutputEndBlockTemplate,[IDBlock])));
+      Result:=true;
+    end;
+end;
+
+function TScriptExecuter.WriteConsoleOutputBlock(const Text: string; IDBlockRef: string;
+  Position: TConsoleOutputBlockPosition): string;
+var
+  Output: string;
+  StartPos, EndPos: integer;
+begin
+  Output:=GetConsoleOutput;
+  if (IDBlockRef='') and (Position=bpDelete) then
+    Exit
+  else if IDBlockRef='' then
+    begin
+      IDBlockRef:='consblok'+GenerateID(8,true);
+      Position:=bpAdd;
+    end
+  else if GetConsoleOutputBlockPosition(Output,IDBlockRef,StartPos,EndPos) then
+    case Position of
+      bpAdd: Position:=bpReplace;
+      bpPrior, bpNext: IDBlockRef:='consblok'+GenerateID(8,true);
+    end
+  else if Position=bpDelete then
+    Exit
+  else
+    Position:=bpAdd;
+  case Position of
+    bpAdd:
+      Output:=
+        Output+
+        Format(ConsoleOutputStartBlockTemplate,[IDBlockRef])+
+        Text+
+        Format(ConsoleOutputEndBlockTemplate,[IDBlockRef]);
+    bpReplace:
+      Output:=
+        Copy(Output,1,StartPos-1)+
+        Format(ConsoleOutputStartBlockTemplate,[IDBlockRef])+
+        Text+
+        Format(ConsoleOutputEndBlockTemplate,[IDBlockRef])+
+        Copy(Output,EndPos,MaxInt);
+    bpDelete:
+      Output:=
+        Copy(Output,1,StartPos-1)+
+        Copy(Output,EndPos,MaxInt);
+    bpPrior:
+      Insert(Text,Output,StartPos);
+    bpNext:
+      Insert(Text,Output,EndPos);
+  end;
+  SetConsoleOutput(Output);
+  Result:=IDBlockRef;
+end;
+
 function TScriptExecuter.GetUnitList:string;
 begin
   Result:='uBaseLibrary';
@@ -494,19 +679,33 @@ begin
   Result:=VarToStr(Value);
 end;
 
-procedure TScriptExecuter.AddConsoleOutputRow(const AMessage:string);
+procedure TScriptExecuter.SetConsoleOutput(const Value: string);
+begin
+  FVariablesDictionary.AddOrSetValue(varConsoleOutout,Value);
+end;
+
+procedure TScriptExecuter.AddConsoleOutputRow(const AMessage:string; BreakLine:boolean);
 var Output:string;
 begin
-  Output:=GetConsoleOutput+Format('<p>%s</p>',[AMessage]);
-  FVariablesDictionary.AddOrSetValue(varConsoleOutout,Output);
+  Output:=GetConsoleOutput+AMessage;
+  if BreakLine then
+    Output:=Output+'<br>';
+  SetConsoleOutput(Output);
 end;
 
 procedure TScriptExecuter.Import(const ANamespace, AValue: string);
+var
+  Value: string;
 begin
-  if (IsLibraryFile(AValue)) then
-    FUnitSearch.ImportFromLibrary(ANamespace,AValue)
+  Value:=Trim(AValue);
+  if StartsText('.\',Value) or StartsText('./',Value) then
+    Value:=IncludeTrailingPathDelimiter(FExecutionPath)+Copy(Value,3,MaxInt)
+  else if StartsText('..\',Value) or StartsText('../',Value) then
+    Value:=IncludeTrailingPathDelimiter(FExecutionPath)+Value;
+  if (IsLibraryFile(Value)) then
+    FUnitSearch.ImportFromLibrary(ANamespace,Value)
   else
-    FUnitSearch.ImportFromPath(ANamespace,AValue);
+    FUnitSearch.ImportFromPath(ANamespace,Value);
 end;
 
 procedure TScriptExecuter.AddUnit(const ANamespace,AUnitName,AUnitText:string;TypeAddedList:TStringArray);

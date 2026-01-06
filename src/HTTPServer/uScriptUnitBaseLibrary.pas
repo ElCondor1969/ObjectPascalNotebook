@@ -30,6 +30,15 @@ type
       info: TProgramInfo);
     procedure dwsUnitLibraryFunctions__LibInterface_InvokeMethodEval(
       info: TProgramInfo);
+    procedure dwsUnitLibraryFunctionsWriteEval(info: TProgramInfo);
+    procedure dwsUnitLibraryClassesTConsoleMethodsWriteEval(Info: TProgramInfo;
+      ExtObject: TObject);
+    procedure dwsUnitLibraryClassesTConsoleMethodsClearEval(Info: TProgramInfo;
+      ExtObject: TObject);
+    procedure dwsUnitLibraryClassesTConsoleMethodsWriteBlockEval(
+      Info: TProgramInfo; ExtObject: TObject);
+    procedure dwsUnitLibraryClassesTConsoleMethodsDeleteBlockEval(
+      Info: TProgramInfo; ExtObject: TObject);
   private
     { Private declarations }
     FScriptExecuter:TScriptExecuter;
@@ -37,6 +46,7 @@ type
     function GetVariablesDictionary:TDictionary<string,variant>;
     function AggiustaLetturaVariabileData(Valore:variant):variant;
     procedure ReplaceScriptDynArrayData(ScriptDynArray:IScriptDynArray;Dati:TData);
+    procedure AddConsoleOutputRow(Info: TProgramInfo;BreakLine:boolean);
   protected
     { Protected declarations }
     property VariablesDictionary:TDictionary<string,variant> read GetVariablesDictionary;
@@ -56,6 +66,21 @@ type
   _TDataContext=class(TDataContext);
 
 { TScriptUnitBaseLibrary }
+
+procedure TScriptUnitBaseLibrary.AddConsoleOutputRow(Info: TProgramInfo;
+  BreakLine: boolean);
+var k:integer;
+    AMessage,Value:string;
+begin
+  AMessage:=Info.ValueAsString['P1'];
+  for k:=2 to 10 do
+    begin
+      Value:=Info.ValueAsString[Format('P%d',[k])];
+      if (Value<>'') then
+        AMessage:=AMessage+Value;
+    end;
+  FScriptExecuter.AddConsoleOutputRow(AMessage, BreakLine);
+end;
 
 function TScriptUnitBaseLibrary.AggiustaLetturaVariabileData(Valore:variant):variant;
 var ValoreFloat:double;
@@ -101,25 +126,54 @@ begin
   FScriptExecuter.MustRestartFlag:=true;
 end;
 
+procedure TScriptUnitBaseLibrary.dwsUnitLibraryClassesTConsoleMethodsClearEval(
+  Info: TProgramInfo; ExtObject: TObject);
+begin
+  FScriptExecuter.ClearConsoleOutput;
+end;
+
+procedure TScriptUnitBaseLibrary.dwsUnitLibraryClassesTConsoleMethodsDeleteBlockEval(
+  Info: TProgramInfo; ExtObject: TObject);
+begin
+  FScriptExecuter.WriteConsoleOutputBLock(
+    '',
+    Info.ValueAsString['IDBlock'],
+    bpDelete
+  );
+end;
+
+procedure TScriptUnitBaseLibrary.dwsUnitLibraryClassesTConsoleMethodsWriteBlockEval(
+  Info: TProgramInfo; ExtObject: TObject);
+begin
+  Info.ResultAsString:=FScriptExecuter.WriteConsoleOutputBLock(
+    Info.ValueAsString['Text'],
+    Info.ValueAsString['IDBlockRef'],
+    TScriptExecuter.TConsoleOutputBlockPosition(Info.ValueAsInteger['Position'])
+  );
+end;
+
+procedure TScriptUnitBaseLibrary.dwsUnitLibraryClassesTConsoleMethodsWriteEval(
+  Info: TProgramInfo; ExtObject: TObject);
+begin
+  AddConsoleOutputRow(Info,false);
+end;
+
 procedure TScriptUnitBaseLibrary.dwsUnitLibraryClassesTConsoleMethodsWriteLnEval(
   Info: TProgramInfo; ExtObject: TObject);
 begin
-  FScriptExecuter.AddConsoleOutputRow(Info.ValueAsString['AMessage']);
+  AddConsoleOutputRow(Info,true);
+end;
+
+procedure TScriptUnitBaseLibrary.dwsUnitLibraryFunctionsWriteEval(
+  Info: TProgramInfo);
+begin
+  AddConsoleOutputRow(Info,false);
 end;
 
 procedure TScriptUnitBaseLibrary.dwsUnitLibraryFunctionsWriteLnEval(
-  info: TProgramInfo);
-var k:integer;
-    AMessage,Value:string;
+  Info: TProgramInfo);
 begin
-  AMessage:=Info.ValueAsString['P1'];
-  for k:=2 to 10 do
-    begin
-      Value:=Info.ValueAsString[Format('P%d',[k])];
-      if (Value<>'') then
-        AMessage:=AMessage+' '+Value;
-    end;
-  FScriptExecuter.AddConsoleOutputRow(AMessage);
+  AddConsoleOutputRow(Info,true);
 end;
 
 procedure TScriptUnitBaseLibrary.

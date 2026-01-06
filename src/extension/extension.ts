@@ -33,7 +33,8 @@ export function activate(context: vscode.ExtensionContext) {
   const runningExecutions = new Map<string, { cancel: () => void }>();
 
   controller.executeHandler = async (cells, notebook, _controller) => {
-    const notebookId = notebook.uri.toString();
+    const notebookId = notebook.uri.toString(),
+          notebookPath = notebook.uri.fsPath.replace(/[/\\][^/\\]+$/, "");
 
     for (const cell of cells) {
       const exec = controller.createNotebookCellExecution(cell);
@@ -114,7 +115,7 @@ export function activate(context: vscode.ExtensionContext) {
         const startResp = await fetch(`http://localhost:${serverPort}/execute`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ notebookId, cell: cell.index, code })
+          body: JSON.stringify({ notebookId, notebookPath, cell: cell.index, code })
         });
 
         if (!startResp.ok) {

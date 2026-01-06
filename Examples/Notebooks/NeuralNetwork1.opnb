@@ -1,0 +1,29 @@
+{
+  "cells": [
+    {
+      "kind": "markdown",
+      "value": "Eseguire la cella sotto per rilasciare tutte le risorse del notebook.",
+      "language": "markdown"
+    },
+    {
+      "kind": "code",
+      "value": "Restart;",
+      "language": "ObjectPascal"
+    },
+    {
+      "kind": "markdown",
+      "value": "Importa la libreria delle reti neurali.",
+      "language": "markdown"
+    },
+    {
+      "kind": "code",
+      "value": "Import('N1','..\\NeuralNetwork');",
+      "language": "ObjectPascal"
+    },
+    {
+      "kind": "code",
+      "value": "var NN:=new TNeuralNetwork(3, [3, 4, 3], new TSigmoidActivation, new TNativeTensorOperations, 0.001);",
+      "language": "ObjectPascal"
+    }
+  ]
+}

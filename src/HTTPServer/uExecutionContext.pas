@@ -21,6 +21,7 @@ type
   private
     FNotebookId:string;
     FExecutionId:string;
+    FNotebookPath:string;
     FExecutionThread:TExecutionThread;
     FScriptExecuter:TScriptExecuter;
     FScript:string;
@@ -35,6 +36,7 @@ type
     function MustRestart:boolean;
     property NotebookId:string read FNotebookId;
     property ExecutionId:string read FExecutionId;
+    property NotebookPath:string read FNotebookPath write FNotebookPath;
     property Output:string read GetOutput;
   public
     class function Get(const NotebookId:string;ExecutionId:string=''):TExecutionContext;
@@ -73,6 +75,7 @@ procedure TExecutionContext.TExecutionThread.Execute;
 begin
   with FContext do
     try
+      FScriptExecuter.ExecutionPath:=FNotebookPath;
       FScriptExecuter.ExecuteScript(FScript);
     except
       on E:Exception do
