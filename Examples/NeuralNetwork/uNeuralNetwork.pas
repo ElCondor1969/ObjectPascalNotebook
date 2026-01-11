@@ -16,11 +16,12 @@ type
   TTensorView=class(TObject)
   protected
     function GetTensor: TTensor; virtual; abstract;
-    procedure SetTensor(Tensor: TTensor); virtual; abstract;
+    procedure SetTensor(const Tensor: TTensor); virtual; abstract;
     function GetDims: array of integer; virtual; abstract;
     function GetValue(Coors: array of integer): float; virtual; abstract;
     procedure SetValue(Coors: array of integer; Value: float); virtual; abstract;
   public
+    function ToOutput(BlockName: string=''): string;
     property Tensor: TTensor read GetTensor write SetTensor;
     property Dims: array of integer read GetDims;
     // Coors -> [Row, Col]
@@ -29,10 +30,11 @@ type
 
   TTensorOperations=class(TObject)
   public
+    // [Number of rows, Number of columns, ...]
     function InstantiateTensor(Dims:array of integer):TTensor; virtual; abstract;
     procedure FreeTensor(const Tensor:TTensor); virtual; abstract;
     function GetTensorView(const Tensor:TTensor): TTensorView; virtual; abstract;
-    procedure TensRandomize(const MM: TTensor); virtual; abstract;
+    procedure TensRandomize(const MM: TTensor; Bias: float=0.5); virtual; abstract;
     function TensMul(const AA, BB: TTensor): TTensor; virtual; abstract;
     function TensTranspose(const MM: TTensor): TTensor; virtual; abstract;
     function TensAdd(const AA, BB: TTensor): TTensor; virtual; abstract;
@@ -45,6 +47,8 @@ type
 
   TLayer = class(TObject)
   private
+    FInputSize: integer;
+    FOutputSize: integer;
     FActivation: TActivationFunction;
     FTensOp: TTensorOperations;
   protected
@@ -65,20 +69,50 @@ type
     FTensOp: TTensorOperations;
     FLayers: array of TLayer;
     FLearningRate: float;
+    FLoss: float;
   public
     constructor Create(const InputSize: integer; const Sizes: array of Integer; Activation: TActivationFunction; TensOp: TTensorOperations; LearningRate: float);
     destructor Destroy; override;
     procedure AddLayers(const Sizes: array of Integer; Activation: TActivationFunction);
     function Predict(const Input: TTensor): TTensor;
     procedure Train(const Input, Target: TTensor);
+    property Loss:double read FLoss;
   end;
 
+  function DimsToString(Dims: array of integer): string;
+
 implementation
+
+function DimsToString(Dims: array of integer): string;
+begin
+  Result:=' ';
+  for var k:=0 to High(Dims) do
+    Result+=IntToStr(Dims[k]);
+  Result:=Format('[%s]',[Result]);
+end;
+
+{ TTensorView }
+
+function TTensorView.ToOutput(BlockName: string=''): string;
+begin
+  var Output:='<table style="border-collapse:collapse; text-align:center; border:1px solid black;">';
+  for var k:=1 to Dims[0] do
+    begin
+      Output+='<tr>';
+      for var j:=1 to Dims[1] do
+        Output+=Format('<td style="padding:8px; border:1px solid black;">%g</td>',[Value[[k,j]]]);
+      Output+='</tr>';
+    end;
+  Output+='</table>';
+  Result:=TConsole.WriteBlock(Output,BlockName);
+end;
 
 { TLayer }
 
 constructor TLayer.Create(InputSize, OutputSize: Integer; Activation: TActivationFunction; TensOp: TTensorOperations);
 begin
+  FInputSize := InputSize;
+  FOutputSize := OutputSize;
   FActivation := Activation;
   FTensOp := TensOp;
   W:=FTensOp.InstantiateTensor([OutputSize, InputSize]);
@@ -125,8 +159,9 @@ begin
   FActivation := Activation;
   FTensOp := TensOp;
   FLearningRate := LearningRate;
-  FLayers.Push(TLayer.Create(InputSize, Sizes[0], Activation, FTensOp));
-  AddLayers(Sizes.Copy(1), Activation);
+  FLayers.Push(new TLayer(InputSize, Sizes[0], Activation, FTensOp));
+  if (Length(Sizes)>1) then
+    AddLayers(Sizes.Copy(1), Activation);
 end;
 
 destructor TNeuralNetwork.Destroy;
@@ -142,9 +177,14 @@ end;
 procedure TNeuralNetwork.AddLayers(const Sizes: array of Integer; Activation: TActivationFunction);
 var
   i: integer;
+  LastLayer: TLayer;
 begin
-  for i := 0 to High(Sizes)-1 do
-    FLayers.Push(TLayer.Create(Sizes[i], Sizes[i+1], Activation, FTensOp));
+  LastLayer:=FLayers[High(FLayers)];
+  for i := 0 to High(Sizes) do
+    begin
+      LastLayer:=new TLayer(LastLayer.FOutputSize, Sizes[i], Activation, FTensOp);
+      FLayers.Push(LastLayer);
+    end;
 end;
 
 function TNeuralNetwork.Predict(const Input: TTensor): TTensor;
@@ -167,6 +207,10 @@ begin
   Z2 := -1; 
   try
     Z1 := FTensOp.TensSub(Target, FLayers[L].A);
+    FLoss:=0;
+    var Z1View:=FTensOp.GetTensorView(Z1);
+    for var k:=1 to FLayers[L].FOutputSize do
+      FLoss+=Sqr(Z1View[[k,1]]); 
     Z2 := FTensOp.TensDerivative(FLayers[L].A, FLayers[L].FActivation);
     FTensOp.FreeTensor(FLayers[L].Delta);
     FLayers[L].Delta := FTensOp.TensHadamard(Z1,Z2);
@@ -183,6 +227,7 @@ begin
       Z1 := FTensOp.TensTranspose(FLayers[i+1].W);
       Z2 := FTensOp.TensMul(Z1, FLayers[i+1].Delta);
       Z3 := FTensOp.TensDerivative(FLayers[i].A, FLayers[i].FActivation);
+      FTensOp.FreeTensor(FLayers[i].Delta);
       FLayers[i].Delta := FTensOp.TensHadamard(Z2,Z3);
     finally
       FTensOp.FreeTensor(Z1);

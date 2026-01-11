@@ -185,6 +185,13 @@ export function activate(context: vscode.ExtensionContext) {
     }
   };
 
+  controller.interruptHandler = async (notebook) => {
+    for (const [_, r] of runningExecutions) {
+      r.cancel();
+    }
+    vscode.window.showInformationMessage('Abort requested.');
+  };
+
   // Comando per annullare esecuzioni
   const cancelCmd = vscode.commands.registerCommand('objectPascalNotebook.cancelExecution', () => {
     for (const [_, r] of runningExecutions) {

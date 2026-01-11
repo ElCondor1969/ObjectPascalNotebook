@@ -8,10 +8,10 @@ uses
 type
   TNativeTensorOperations=class(TTensorOperations)
   public
-    function InstantiateTensor(Dims:array of integer):TTensor; override; // [Number of colons, Number of rows]
+    function InstantiateTensor(Dims:array of integer):TTensor; override;
     procedure FreeTensor(const Tensor:TTensor); override;
     function GetTensorView(const Tensor:TTensor): TTensorView; override;
-    procedure TensRandomize(const MM: TTensor); override;
+    procedure TensRandomize(const MM: TTensor; Bias: float=0.5); override;
     function TensMul(const AA, BB: TTensor): TTensor; override;
     function TensTranspose(const MM: TTensor): TTensor; override;
     function TensAdd(const AA, BB: TTensor): TTensor; override;
@@ -37,11 +37,10 @@ type
 
   TNativeTensorView=class(TTensorView)
   private
-    FMatrix: TMatrix;
     FTensor: TTensor;
   protected
     function GetTensor: TTensor; override;
-    procedure SetTensor(Tensor: TTensor); override;
+    procedure SetTensor(const Tensor: TTensor); override;
     function GetDims: array of integer; override;
     function GetValue(Coors: array of integer): float; override;
     procedure SetValue(Coors: array of integer; Value: float); override;
@@ -51,11 +50,11 @@ type
 
 var
   MatrixDict: TMatrixDict;
-  DictIndex: integer := 0;
+  DictIndex: integer:=0;
 
-function SameDims(Dims1, Dims2: array of integer):boolean;
+function SameDims(Dims1, Dims2: array of integer): boolean;
 begin
-  Result:=Length(Dims1)=Length(Dims2);
+  Result:=(Length(Dims1)=Length(Dims2));
   if (Result) then
     for var k:=0 to High(Dims1) do
       if (Dims1[k]<>Dims2[k]) then
@@ -77,36 +76,31 @@ begin
   Result:=FTensor;
 end;
 
-procedure TNativeTensorView.SetTensor(Tensor: TTensor);
+procedure TNativeTensorView.SetTensor(const Tensor: TTensor);
 begin
   if (FTensor<>0) then
     begin
-      var MatrixEntry:=MatrixDict[FTensor];
+      var MatrixEntry:=MatrixDict[FTensor]; 
       MatrixEntry.Freed:=true;
       MatrixDict[FTensor]:=MatrixEntry;
     end;
   if (Tensor<>0) then
-    FMatrix:=MatrixDict[Tensor].Matrix
-  else
-    FMatrix:=[];
-  FTensor:=Tensor;
+    FTensor:=Tensor;
 end;
 
 function TNativeTensorView.GetDims: array of integer;
 begin
-  Result:=[];
-  Result.Push(FMatrix.Length);
-  Result.Push(FMatrix[0].Length);
+  Result:=MatrixDict[FTensor].Dims;
 end;
 
 function TNativeTensorView.GetValue(Coors: array of integer): float;
 begin
-  Result:=FMatrix[Coors[1]][Coors[0]];
+  Result:=MatrixDict[FTensor].Matrix[Coors[0]-1][Coors[1]-1];
 end;
 
 procedure TNativeTensorView.SetValue(Coors: array of integer; Value: float);
 begin
-  FMatrix[Coors[1]][Coors[0]]:=Value;
+  MatrixDict[FTensor].Matrix[Coors[0]-1][Coors[1]-1]:=Value;
 end;
 
 { TNativeTensorOperations }
@@ -116,17 +110,18 @@ var Matrix: TMatrix;
     MatrixEntry: TMatrixEntry;
 begin
   // For now we manage up to matrix tensor.
-  if (Dims.Length<>2) then
+  if (Dims.Length=0) or (Dims.Length>2) then
     RaiseException('Dimensions over the limits');
   
-  for var k in MatrixDict.Keys do
+  for var k:=0 to High(MatrixDict.Keys) do
     begin
-      MatrixEntry:=MatrixDict[k];
+      var Idx:=MatrixDict.Keys[k];
+      MatrixEntry:=MatrixDict[Idx];
       if MatrixEntry.Freed and SameDims(MatrixEntry.Dims,Dims) then
         begin
           MatrixEntry.Freed:=false;
-          MatrixDict[k]:=MatrixEntry;
-          Result:=k;
+          MatrixDict[Idx]:=MatrixEntry;
+          Result:=Idx;
           Exit;
         end;
     end;
@@ -137,7 +132,7 @@ begin
   for var k:=0 to Dims[0]-1 do
     Matrix[k].SetLength(Dims[1]);
   MatrixEntry.Freed:=false;
-  MatrixEntry.Dims:=Dims;
+  MatrixEntry.Dims:=Dims.Copy;
   MatrixEntry.Matrix:=Matrix;
   MatrixDict[Result]:=MatrixEntry;
 end;
@@ -158,7 +153,7 @@ begin
   Result:=new TNativeTensorView(Tensor);
 end;
 
-procedure TNativeTensorOperations.TensRandomize(const MM: TTensor);
+procedure TNativeTensorOperations.TensRandomize(const MM: TTensor; Bias: float);
 var
   i, j: Integer;
   M: TMatrix;
@@ -166,7 +161,7 @@ begin
   M:=MatrixDict[MM].Matrix;
   for i := 0 to High(M) do
     for j := 0 to High(M[i]) do
-      M[i][j] := Random+1;
+      M[i][j] := Random-Bias;
 end;
 
 function TNativeTensorOperations.TensMul(const AA, BB: TTensor): TTensor;
@@ -176,15 +171,17 @@ var
 begin
   A:=MatrixDict[AA].Matrix;
   B:=MatrixDict[BB].Matrix;
+  if (Length(A[0])<>Length(B)) then
+    RaiseException('Multiplication impossible by tensor''s dimensions');
   Result:=InstantiateTensor([Length(A), Length(B[0])]);
   R:=MatrixDict[Result].Matrix;
   for i := 0 to High(A) do
     for j := 0 to High(B[0]) do
-    begin
-      R[i][j] := 0;
-      for k := 0 to High(B) do
-        R[i][j] := R[i][j] + A[i][k] * B[k][j];
-    end;
+      begin
+        R[i][j] := 0;
+        for k := 0 to High(B) do
+          R[i][j] := R[i][j] + A[i][k] * B[k][j];
+      end;
 end;
 
 function TNativeTensorOperations.TensTranspose(const MM: TTensor): TTensor;

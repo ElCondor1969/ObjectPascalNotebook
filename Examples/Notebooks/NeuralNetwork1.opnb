@@ -22,7 +22,27 @@
     },
     {
       "kind": "code",
-      "value": "var NN:=new TNeuralNetwork(3, [3, 4, 3], new TSigmoidActivation, new TNativeTensorOperations, 0.001);",
+      "value": "var TOP:=new TNativeTensorOperations;\r\nvar NN:=new TNeuralNetwork(3, [3,10,3], new TSigmoidActivation, TOP, 0.001);",
+      "language": "ObjectPascal"
+    },
+    {
+      "kind": "code",
+      "value": "var Input:=TOP.InstantiateTensor([3,1]);\r\nvar InputView:=TOP.GetTensorView(Input);\r\nvar Target:=TOP.InstantiateTensor([3,1]);\r\nvar TargetView:=TOP.GetTensorView(Target);\r\nvar Output: TTensor;\r\nvar OutputView: TTensorView;",
+      "language": "ObjectPascal"
+    },
+    {
+      "kind": "code",
+      "value": "(*\r\nInputView[[1,1]]:=0.9;\r\nInputView[[2,1]]:=0.1;\r\nInputView[[3,1]]:=0.62;\r\n*)\r\nTOP.TensRandomize(Input);\r\nInputView.ToOutput;",
+      "language": "ObjectPascal"
+    },
+    {
+      "kind": "code",
+      "value": "Output:=NN.Predict(Input);\r\nOutputView:=TOP.GetTensorView(Output);\r\nOutputView.ToOutput;",
+      "language": "ObjectPascal"
+    },
+    {
+      "kind": "code",
+      "value": "InputView[[1,1]]:=0.9;\r\nInputView[[2,1]]:=0.1;\r\nInputView[[3,1]]:=0.62;\r\nTargetView[[1,1]]:=0.5;\r\nTargetView[[2,1]]:=0.4;\r\nTargetView[[3,1]]:=0.3;\r\nbegin\r\n  for var k:=1 to 5000 do\r\n    begin\r\n      NN.Train(Input,Target);\r\n      if ((k mod 10)=0) then\r\n        TConsole.WriteBlock(Format('Loss: <b>%g</b>',[NN.Loss]),'BlkLoss');\r\n    end;\r\nend;\r\nOutput:=NN.Predict(Input);\r\nOutputView:=TOP.GetTensorView(Output);\r\nOutputView.ToOutput;",
       "language": "ObjectPascal"
     }
   ]

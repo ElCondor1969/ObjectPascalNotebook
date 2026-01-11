@@ -32,17 +32,14 @@ const
 var
   InterfaceTypeDefinition, ImplementationDefinition, ClassList, ClassDef, MethodList, MethodDef, ReturnType: string;
   QualifiedName, MethodKind, ClassName, InternalClassName, MethodName, MethodDirectives, Ancestor: string;
-  ParameterCount, IndexTypeAddedList: integer;
+  ParameterCount: integer;
   FlagConstructor: boolean;
-  TypeAddedList:TStringArray;
   ParametersDefinition: TJSONArray;
   Definition: TJSONobject;
   ClassDefinition, MethodDefinition, ParameterDefinition: TJSONvalue;
 begin
   InterfaceTypeDefinition:='';
   ImplementationDefinition:='';
-  SetLength(TypeAddedList,0);
-  IndexTypeAddedList:=0;
   Definition:=ParseJSONObject(AUnitDefinition);
   try
     ClassList:='';
@@ -52,9 +49,6 @@ begin
           MethodList:='';
           FlagConstructor := false;
           ClassName:=ReadJSONValue(ClassDefinition,'Name','');
-          SetLength(TypeAddedList,IndexTypeAddedList+1);
-          TypeAddedList[IndexTypeAddedList]:=ClassName;
-          Inc(IndexTypeAddedList);
           QualifiedName:=ReadJSONValue(ClassDefinition,'QualifiedName','');
           Ancestor:=ReadJSONValue(ClassDefinition,'Ancestor','TObject');
           if (Trim(Ancestor)='') then
@@ -218,8 +212,7 @@ begin
       AUnitName,
       InterfaceTypeDefinition,
       ImplementationDefinition
-    ]),
-    TypeAddedList
+    ])
   );
 end;
 

@@ -73,13 +73,15 @@ end;
 
 procedure TExecutionContext.TExecutionThread.Execute;
 begin
-  with FContext do
+  with FContext.FScriptExecuter do
     try
-      FScriptExecuter.ExecutionPath:=FNotebookPath;
-      FScriptExecuter.ExecuteScript(FScript);
+      ExecutionPath:=FContext.FNotebookPath;
+      ExecuteScript(FContext.FScript);
     except
-      on E:Exception do
+      on E:EAbort do
         ;
+      on E:Exception do
+        AddConsoleOutputRow(E.Message);
     end;
 end;
 
@@ -125,14 +127,7 @@ end;
 procedure TExecutionContext.Cancel;
 begin
   if (Assigned(FExecutionThread)) then
-    with FExecutionThread do
-      begin
-        Terminate;
-        Suspended:=true;
-        Free;
-      end;
-  FExecutionThread:=nil;
-  FExecutionId:='';
+    FScriptExecuter.CancelPending:=true;
 end;
 
 function TExecutionContext.GetOutput:string;
