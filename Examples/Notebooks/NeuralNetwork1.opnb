@@ -1,18 +1,23 @@
 {
   "cells": [
     {
-      "kind": "markdown",
-      "value": "Eseguire la cella sotto per rilasciare tutte le risorse del notebook.",
-      "language": "markdown"
-    },
-    {
       "kind": "code",
-      "value": "Restart;",
+      "value": "Restart; // Execute for release all resources and restart the execution of the notebook.",
       "language": "ObjectPascal"
     },
     {
       "kind": "markdown",
-      "value": "Importa la libreria delle reti neurali.",
+      "value": "Define which kind of tensor operation use.",
+      "language": "markdown"
+    },
+    {
+      "kind": "code",
+      "value": "{$DEFINE TOP_MEMORY}\r\n{.$DEFINE TOP_NATIVE}",
+      "language": "ObjectPascal"
+    },
+    {
+      "kind": "markdown",
+      "value": "Import the neural network library.",
       "language": "markdown"
     },
     {
@@ -21,9 +26,49 @@
       "language": "ObjectPascal"
     },
     {
+      "kind": "markdown",
+      "value": "Import the tensor operation libraries.",
+      "language": "markdown"
+    },
+    {
       "kind": "code",
-      "value": "var TOP:=new TNativeTensorOperations;\r\nvar NN:=new TNeuralNetwork(3, [3,10,3], new TSigmoidActivation, TOP, 0.001);",
+      "value": "{$IFDEF TOP_MEMORY}\r\nImport('MemoryMatrices','..\\MemoryMatrices');\r\nImport('MemoryMatricesTOP','..\\MemoryMatricesTensorOperations');\r\n{$ENDIF}\r\n\r\n{$IFDEF TOP_NATIVE}\r\nImport('NativeTOP','..\\NativeTensorOperations');\r\n{$ENDIF}",
       "language": "ObjectPascal"
+    },
+    {
+      "kind": "markdown",
+      "value": "Istantiate the correct tensor operations object.",
+      "language": "markdown"
+    },
+    {
+      "kind": "code",
+      "value": "{$IFDEF TOP_MEMORY}\r\n  var TOP:=new TMemoryMatricesTensorOperations;\r\n{$ENDIF}\r\n\r\n{$IFDEF TOP_NATIVE}\r\n  var TOP:=new TNativeTensorOperations;\r\n{$ENDIF}",
+      "language": "ObjectPascal"
+    },
+    {
+      "kind": "markdown",
+      "value": "Define the neural network.",
+      "language": "markdown"
+    },
+    {
+      "kind": "code",
+      "value": "var NN:=new TNeuralNetwork(3, [3,10,3], new TSigmoidActivation, TOP, 0.001);",
+      "language": "ObjectPascal"
+    },
+    {
+      "kind": "markdown",
+      "value": "Set the log procedure for the neural network.",
+      "language": "markdown"
+    },
+    {
+      "kind": "code",
+      "value": "NN.SetNeuralLog(\r\n  procedure(NN: TNeuralNetwork; const Msg: string; const Tensor: TTensor; TOP: TTensorOperations)\r\n  begin\r\n    WriteLn(Msg);\r\n    TOP.GetTensorView(Tensor).ToOutput;\r\n  end\r\n);",
+      "language": "ObjectPascal"
+    },
+    {
+      "kind": "markdown",
+      "value": "Define input, target and output of neural network and their viewers.",
+      "language": "markdown"
     },
     {
       "kind": "code",
@@ -31,9 +76,19 @@
       "language": "ObjectPascal"
     },
     {
+      "kind": "markdown",
+      "value": "Initialize input vector with random values.",
+      "language": "markdown"
+    },
+    {
       "kind": "code",
-      "value": "(*\r\nInputView[[1,1]]:=0.9;\r\nInputView[[2,1]]:=0.1;\r\nInputView[[3,1]]:=0.62;\r\n*)\r\nTOP.TensRandomize(Input);\r\nInputView.ToOutput;",
+      "value": "TOP.TensRandomize(Input);\r\nInputView.ToOutput;",
       "language": "ObjectPascal"
+    },
+    {
+      "kind": "markdown",
+      "value": "Test of network response.",
+      "language": "markdown"
     },
     {
       "kind": "code",
@@ -41,8 +96,13 @@
       "language": "ObjectPascal"
     },
     {
+      "kind": "markdown",
+      "value": "Train the neural network; the cell can run more times for to lower the loss.",
+      "language": "markdown"
+    },
+    {
       "kind": "code",
-      "value": "InputView[[1,1]]:=0.9;\r\nInputView[[2,1]]:=0.1;\r\nInputView[[3,1]]:=0.62;\r\nTargetView[[1,1]]:=0.5;\r\nTargetView[[2,1]]:=0.4;\r\nTargetView[[3,1]]:=0.3;\r\nbegin\r\n  for var k:=1 to 5000 do\r\n    begin\r\n      NN.Train(Input,Target);\r\n      if ((k mod 10)=0) then\r\n        TConsole.WriteBlock(Format('Loss: <b>%g</b>',[NN.Loss]),'BlkLoss');\r\n    end;\r\nend;\r\nOutput:=NN.Predict(Input);\r\nOutputView:=TOP.GetTensorView(Output);\r\nOutputView.ToOutput;",
+      "value": "InputView.WriteData([\r\n  0.9,\r\n  0.1,\r\n  0.62\r\n]);\r\nTargetView.WriteData([\r\n  0.5,\r\n  0.4,\r\n  0.3\r\n]);\r\nbegin\r\n  for var k:=1 to 5000 do\r\n    begin\r\n      NN.Train(Input,Target);\r\n      if ((k mod 10)=0) then\r\n        TConsole.WriteBlock(Format('Loss: <b>%g</b><br>',[NN.Loss]),'BlkLoss');\r\n    end;\r\nend;\r\nTConsole.WriteBlock(Format('Loss: <b>%g</b><br>',[NN.Loss]),'BlkLoss');\r\nOutput:=NN.Predict(Input);\r\nOutputView:=TOP.GetTensorView(Output);\r\nOutputView.ToOutput;",
       "language": "ObjectPascal"
     }
   ]

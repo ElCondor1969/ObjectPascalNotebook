@@ -24,12 +24,6 @@ type
     procedure dwsLibreryUnitFunctionsRestartEval(info: TProgramInfo);
     procedure dwsUnitLibraryFunctionsImport_stringstring_Eval(
       info: TProgramInfo);
-    procedure dwsUnitLibraryFunctions__LibInterface_CreateEval(
-      info: TProgramInfo);
-    procedure dwsUnitLibraryFunctions__LibInterface_DestroyEval(
-      info: TProgramInfo);
-    procedure dwsUnitLibraryFunctions__LibInterface_InvokeMethodEval(
-      info: TProgramInfo);
     procedure dwsUnitLibraryFunctionsWriteEval(info: TProgramInfo);
     procedure dwsUnitLibraryClassesTConsoleMethodsWriteEval(Info: TProgramInfo;
       ExtObject: TObject);
@@ -39,9 +33,17 @@ type
       Info: TProgramInfo; ExtObject: TObject);
     procedure dwsUnitLibraryClassesTConsoleMethodsDeleteBlockEval(
       Info: TProgramInfo; ExtObject: TObject);
+    procedure dwsUnitLibraryFunctions__LibInterface_InvokeLibProcEval(
+      info: TProgramInfo);
+    procedure dwsUnitLibraryFunctionsVarToIntEval(info: TProgramInfo);
+    procedure dwsUnitLibraryFunctionsVarToFloatEval(info: TProgramInfo);
+    procedure dwsUnitLibraryFunctionsVarToStrEval(info: TProgramInfo);
+    procedure dwsUnitLibraryFunctions__ArrayVariantArrayToVariantArrayEval(
+      info: TProgramInfo);
   private
     { Private declarations }
     FScriptExecuter:TScriptExecuter;
+    FMemoryHandleList:TList<integer>;
     function DecodificaArrayOfConst(Info:TProgramInfo;const NomeParametro:string):TVarRecArray;
     function GetVariablesDictionary:TDictionary<string,variant>;
     function AggiustaLetturaVariabileData(Valore:variant):variant;
@@ -53,6 +55,8 @@ type
   public
     { Public declarations }
     constructor Create(ScriptExecuter:TScriptExecuter);
+    procedure AfterConstruction;override;
+    procedure BeforeDestruction;override;
   end;
 
 implementation
@@ -82,6 +86,12 @@ begin
   FScriptExecuter.AddConsoleOutputRow(AMessage, BreakLine);
 end;
 
+procedure TScriptUnitBaseLibrary.AfterConstruction;
+begin
+  inherited;
+  FMemoryHandleList:=TList<integer>.Create;
+end;
+
 function TScriptUnitBaseLibrary.AggiustaLetturaVariabileData(Valore:variant):variant;
 var ValoreFloat:double;
 begin
@@ -92,6 +102,19 @@ begin
     end
   else
     Result:=Valore;
+end;
+
+procedure TScriptUnitBaseLibrary.BeforeDestruction;
+var k:integer;
+    PP:Pointer;
+begin
+  inherited;
+  for k:=0 to FMemoryHandleList.Count-1 do
+    begin
+      PP:=Pointer(FMemoryHandleList[k]);
+      FreeMem(PP);
+    end;
+  FMemoryHandleList.Free;
 end;
 
 constructor TScriptUnitBaseLibrary.Create(ScriptExecuter:TScriptExecuter);
@@ -182,7 +205,7 @@ var Risultato:variant;
     InfoArgs:IInfo;
 begin
   try
-    InfoArgs:=Info.Vars['Parametro'];
+    InfoArgs:=Info.Vars['Value'];
     DynArrayToVariant(Risultato,Pointer(InfoArgs.Data),TypeInfo(TData));
     try
       Info.ResultAsVariant:=Risultato;
@@ -194,55 +217,44 @@ begin
   end;
 end;
 
+procedure TScriptUnitBaseLibrary.dwsUnitLibraryFunctions__ArrayVariantArrayToVariantArrayEval(
+  Info: TProgramInfo);
+var
+  k: integer;
+  Result, Element: IScriptDynArray;
+  InfoArgs: IInfo;
+begin
+  Result:=Info.ResultVars.ScriptDynArray;
+  InfoArgs:=Info.Vars['Value'];
+  for k:=0 to High(InfoArgs.Data) do
+    begin
+      Element:=IScriptDynArray(TVarData(InfoArgs.Data[k]).VUnknown);
+      Result.Concat(Element,0,Element.ArrayLength);
+    end;
+end;
+
 procedure TScriptUnitBaseLibrary.
             dwsUnitLibraryFunctions__DestroyObjectEval(Info:TProgramInfo);
 begin
-  DestroyInternalObject(Info.ValueAsInteger['HandleOggetto']);
+  DestroyInternalObject(Info.ValueAsInteger['ObjectHandle']);
 end;
 
-procedure TScriptUnitBaseLibrary.dwsUnitLibraryFunctions__LibInterface_CreateEval(
+procedure TScriptUnitBaseLibrary.dwsUnitLibraryFunctions__LibInterface_InvokeLibProcEval(
   Info: TProgramInfo);
 var
   LibInterface: TLibInterface;
+  Data: TData;
 begin
-  LibInterface := FScriptExecuter.GetLibInterface(Info.ValueAsString['Namespace']);
-  Info.ResultAsInteger:=
-    LibInterface.InstantiateClassObject(
-      NativeInt(FScriptExecuter),
-      PChar(Info.ValueAsString['QualifiedClassName']),
-      PChar(Info.ValueAsString['ConstructorName']),
-      Info.Vars['Args'].Data
-    );
-end;
-
-procedure TScriptUnitBaseLibrary.dwsUnitLibraryFunctions__LibInterface_DestroyEval(
-  Info: TProgramInfo);
-var
-  LibInterface: TLibInterface;
-begin
-  LibInterface := FScriptExecuter.GetLibInterface(Info.ValueAsString['Namespace']);
-  LibInterface.DestructorClassObject(
-    NativeInt(FScriptExecuter),
-    Info.ValueAsInteger['Instance'],
-    PChar(Info.ValueAsString['QualifiedClassName']),
-    PChar(Info.ValueAsString['DestructorName'])
-  );
-end;
-
-procedure TScriptUnitBaseLibrary.dwsUnitLibraryFunctions__LibInterface_InvokeMethodEval(
-  Info: TProgramInfo);
-var
-  LibInterface: TLibInterface;
-begin
-  LibInterface := FScriptExecuter.GetLibInterface(Info.ValueAsString['Namespace']);
+  LibInterface := FScriptExecuter.GetLibInterface(Info.ValueAsString['LibGUID']);
+  Data:=Info.Vars['Args'].Data;
   Info.ResultAsVariant:=
-    LibInterface.InvokeClassMethod(
+    LibInterface.InvokeLibProc(
       NativeInt(FScriptExecuter),
       Info.ValueAsInteger['Instance'],
-      PChar(Info.ValueAsString['QualifiedClassName']),
-      PChar(Info.ValueAsString['MethodName']),
-      Info.Vars['Args'].Data
+      PChar(Info.ValueAsString['ProcName']),
+      Data
     );
+  Info.Vars['Args'].Data:=Data;
 end;
 
 procedure TScriptUnitBaseLibrary.
@@ -258,7 +270,7 @@ procedure TScriptUnitBaseLibrary.
             dwsUnitLibraryFunctions__VariantToArrayEval(Info:TProgramInfo);
 var Risultato:TData;
 begin
-  DynArrayFromVariant(Pointer(Risultato),Info.ValueAsVariant['Parametro'],TypeInfo(TData));
+  DynArrayFromVariant(Pointer(Risultato),Info.ValueAsVariant['Value'],TypeInfo(TData));
   ReplaceScriptDynArrayData(Info.ResultVars.ScriptDynArray,Risultato);
 end;
 
@@ -273,14 +285,50 @@ begin
   RaiseException(Info.ValueAsString['AMessage']);
 end;
 
+procedure TScriptUnitBaseLibrary.dwsUnitLibraryFunctionsVarToFloatEval(
+  Info: TProgramInfo);
+var
+  Value: variant;
+begin
+  Value:=Info.ValueAsVariant['Value'];
+  if (VarIsNull(Value)) then
+    Info.ResultAsFloat:=0
+  else
+    Info.ResultAsFloat:=Value;
+end;
+
+procedure TScriptUnitBaseLibrary.dwsUnitLibraryFunctionsVarToIntEval(
+  Info: TProgramInfo);
+var
+  Value: variant;
+begin
+  Value:=Info.ValueAsVariant['Value'];
+  if (VarIsNull(Value)) then
+    Info.ResultAsInteger:=0
+  else
+    Info.ResultAsInteger:=Value;
+end;
+
+procedure TScriptUnitBaseLibrary.dwsUnitLibraryFunctionsVarToStrEval(
+  Info: TProgramInfo);
+var
+  Value: variant;
+begin
+  Value:=Info.ValueAsVariant['Value'];
+  if (VarIsNull(Value)) then
+    Info.ResultAsString:=''
+  else
+    Info.ResultAsString:=Value;
+end;
+
 procedure TScriptUnitBaseLibrary.dwsUnitLibraryFunctionsImport_stringstring_Eval(
-  info: TProgramInfo);
+  Info: TProgramInfo);
 begin
   FScriptExecuter.Import(Info.ValueAsString['Namespace'],Info.ValueAsString['APath']);
 end;
 
 procedure TScriptUnitBaseLibrary.dwsUnitLibraryFunctionsRaiseException_Args_Eval(
-  info: TProgramInfo);
+  Info: TProgramInfo);
 var Args:TVarRecArray;
     k:integer;
 begin

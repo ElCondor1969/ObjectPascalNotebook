@@ -5,13 +5,23 @@ object ScriptUnitBaseLibrary: TScriptUnitBaseLibrary
   object dwsUnitLibrary: TdwsUnit
     Arrays = <
       item
+        Name = 'TVariantArray'
+        DataType = 'variant'
+        IsDynamic = True
+      end
+      item
         Name = 'TIntegerArray'
         DataType = 'integer'
         IsDynamic = True
       end
       item
-        Name = 'TVariantArray'
-        DataType = 'variant'
+        Name = 'TStringArray'
+        DataType = 'string'
+        IsDynamic = True
+      end
+      item
+        Name = 'TFloatArray'
+        DataType = 'float'
         IsDynamic = True
       end
       item
@@ -20,8 +30,8 @@ object ScriptUnitBaseLibrary: TScriptUnitBaseLibrary
         IsDynamic = True
       end
       item
-        Name = 'TStringArray'
-        DataType = 'string'
+        Name = 'TArrayVariantArray'
+        DataType = 'TVariantArray'
         IsDynamic = True
       end>
     Classes = <
@@ -225,7 +235,7 @@ object ScriptUnitBaseLibrary: TScriptUnitBaseLibrary
         Name = '__DestroyObject'
         Parameters = <
           item
-            Name = 'HandleOggetto'
+            Name = 'ObjectHandle'
             DataType = 'integer'
           end>
         OnEval = dwsUnitLibraryFunctions__DestroyObjectEval
@@ -234,49 +244,38 @@ object ScriptUnitBaseLibrary: TScriptUnitBaseLibrary
         Name = '__ArrayToVariant'
         Parameters = <
           item
-            Name = 'Parametro'
+            Name = 'Value'
             DataType = 'TVariantArray'
           end>
         ResultType = 'variant'
         OnEval = dwsUnitLibraryFunctions__ArrayToVariantEval
       end
       item
+        Name = '__ArrayVariantArrayToVariantArray'
+        Parameters = <
+          item
+            Name = 'Value'
+            DataType = 'TArrayVariantArray'
+            IsWritable = False
+          end>
+        ResultType = 'TVariantArray'
+        OnEval = dwsUnitLibraryFunctions__ArrayVariantArrayToVariantArrayEval
+      end
+      item
         Name = '__VariantToArray'
         Parameters = <
           item
-            Name = 'Parametro'
+            Name = 'Value'
             DataType = 'variant'
           end>
         ResultType = 'TVariantArray'
         OnEval = dwsUnitLibraryFunctions__VariantToArrayEval
       end
       item
-        Name = '__LibInterface_Create'
+        Name = '__LibInterface_InvokeLibProc'
         Parameters = <
           item
-            Name = 'Namespace'
-            DataType = 'string'
-          end
-          item
-            Name = 'QualifiedClassName'
-            DataType = 'string'
-          end
-          item
-            Name = 'ConstructorName'
-            DataType = 'string'
-          end
-          item
-            Name = 'Args'
-            DataType = 'TVariantArray'
-          end>
-        ResultType = 'integer'
-        OnEval = dwsUnitLibraryFunctions__LibInterface_CreateEval
-      end
-      item
-        Name = '__LibInterface_Destroy'
-        Parameters = <
-          item
-            Name = 'Namespace'
+            Name = 'LibGUID'
             DataType = 'string'
           end
           item
@@ -284,40 +283,49 @@ object ScriptUnitBaseLibrary: TScriptUnitBaseLibrary
             DataType = 'integer'
           end
           item
-            Name = 'QualifiedClassName'
-            DataType = 'string'
-          end
-          item
-            Name = 'DestructorName'
-            DataType = 'string'
-          end>
-        OnEval = dwsUnitLibraryFunctions__LibInterface_DestroyEval
-      end
-      item
-        Name = '__LibInterface_InvokeMethod'
-        Parameters = <
-          item
-            Name = 'Namespace'
-            DataType = 'string'
-          end
-          item
-            Name = 'Instance'
-            DataType = 'integer'
-          end
-          item
-            Name = 'QualifiedClassName'
-            DataType = 'string'
-          end
-          item
-            Name = 'MethodName'
+            Name = 'ProcName'
             DataType = 'string'
           end
           item
             Name = 'Args'
             DataType = 'TVariantArray'
+            IsVarParam = True
           end>
         ResultType = 'variant'
-        OnEval = dwsUnitLibraryFunctions__LibInterface_InvokeMethodEval
+        OnEval = dwsUnitLibraryFunctions__LibInterface_InvokeLibProcEval
+      end
+      item
+        Name = 'VarToInt'
+        Parameters = <
+          item
+            Name = 'Value'
+            DataType = 'variant'
+            IsWritable = False
+          end>
+        ResultType = 'integer'
+        OnEval = dwsUnitLibraryFunctionsVarToIntEval
+      end
+      item
+        Name = 'VarToFloat'
+        Parameters = <
+          item
+            Name = 'Value'
+            DataType = 'variant'
+            IsWritable = False
+          end>
+        ResultType = 'float'
+        OnEval = dwsUnitLibraryFunctionsVarToFloatEval
+      end
+      item
+        Name = 'VarToStr'
+        Parameters = <
+          item
+            Name = 'Value'
+            DataType = 'string'
+            IsWritable = False
+          end>
+        ResultType = 'string'
+        OnEval = dwsUnitLibraryFunctionsVarToStrEval
       end
       item
         Name = 'RaiseException'
@@ -490,19 +498,6 @@ object ScriptUnitBaseLibrary: TScriptUnitBaseLibrary
           end>
         Overloaded = True
         OnEval = dwsUnitLibraryFunctionsImport_stringstring_Eval
-      end>
-    Synonyms = <
-      item
-        Name = 'Double'
-        DataType = 'float'
-      end
-      item
-        Name = 'Real'
-        DataType = 'float'
-      end
-      item
-        Name = 'TDateTime'
-        DataType = 'float'
       end>
     UnitName = 'uBaseLibrary'
     StaticSymbols = False

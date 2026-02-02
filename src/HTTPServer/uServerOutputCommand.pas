@@ -28,9 +28,8 @@ end;
 procedure TServerOutputCommand.Execute(Server:TIdHTTPServer;ARequestInfo:TIdHTTPRequestInfo;AResponseInfo:TIdHTTPResponseInfo);
 var
   Body,Response:TJSONObject;
-  NotebookId,ExecutionId:string;
+  NotebookId,ExecutionId,Output:string;
   Offset:integer;
-  Finished:boolean;
   Context:TExecutionContext;
 begin
   Body:=ParseJSONObject(GetRequestBody(ARequestInfo));
@@ -45,22 +44,18 @@ begin
     Offset:=ReadJSONValue(Body,'offset',0);
     try
       Context:=TExecutionContext.Get(NotebookId,ExecutionId);
-      Response.AddPair('cancelled',TJSONFalse.Create);
-      Finished:=Context.Finished;
-      Response.AddPair('finished',TJSONBool.Create(Finished));
-      if (Finished) then
+      Output:=Context.Output;
+      if (WriteJSONValue(Response,'finished',Context.Finished)) then
         Context.Cancel;
     except
-      Response.AddPair('cancelled',TJSONTrue.Create);
-      Response.AddPair('finished',TJSONTrue.Create);
-      Finished:=true;
+      WriteJSONValue(Response,'finished',true);
+      Output:='';
     end;
-    Response.AddPair('chunk',Context.Output);
-    Response.AddPair('completeOutput',Context.Output);
+    WriteJSONValue(Response,'cancelled',false);
+    WriteJSONValue(Response,'chunk',Output);
+    WriteJSONValue(Response,'completeOutput',Output);
     AResponseInfo.ContentType:='application/json';
     AResponseInfo.ContentText:=Response.ToString;
-    if (Context.MustRestart) then
-      DestroyObject(Context);
   finally
     Body.Free;
     Response.Free;

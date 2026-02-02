@@ -44,7 +44,7 @@ begin
     Context:=TExecutionContext.Get(NotebookId);
     Context.NotebookPath:=NotebookPath;
     Context.Execute(Script);
-    Response.AddPair('executionId',Context.ExecutionId);
+    WriteJSONValue(Response,'executionId',Context.ExecutionId);
     AResponseInfo.ContentType:='application/json';
     AResponseInfo.ContentText:=Response.ToString;
   finally

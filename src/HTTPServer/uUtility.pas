@@ -19,6 +19,7 @@ function VarIsDateTime(Valore:variant):boolean;
 function VarIsBoolean(Valore:variant):boolean;
 function VarIsInt(Valore:variant):boolean;
 function VarToBoolean(Value:variant):boolean;
+function VariantDataSize(const V:Variant):Integer;
 procedure DestroyInternalObject(HandleOggetto:Int64);
 procedure DestroyCostantObject(const Oggetto);
 procedure DestroyObject(var Oggetto);
@@ -797,6 +798,70 @@ begin
         Free;
       end;
 end;
+
+function VariantDataSize(const V: Variant): Integer;
+var
+  vt: TVarType;
+begin
+  vt := VarType(V);
+
+  case vt of
+    varEmpty, varNull:
+      Result := 0;
+
+    varSmallint:
+      Result := SizeOf(SmallInt);
+
+    varInteger:
+      Result := SizeOf(Integer);
+
+    varSingle:
+      Result := SizeOf(Single);
+
+    varDouble:
+      Result := SizeOf(Double);
+
+    varCurrency:
+      Result := SizeOf(Currency);
+
+    varDate:
+      Result := SizeOf(TDateTime);
+
+    varShortInt:
+      Result := SizeOf(ShortInt);
+
+    varByte:
+      Result := SizeOf(Byte);
+
+    varWord:
+      Result := SizeOf(Word);
+
+    varLongWord:
+      Result := SizeOf(LongWord);
+
+    varInt64:
+      Result := SizeOf(Int64);
+
+    varUInt64:
+      Result := SizeOf(UInt64);
+
+    varBoolean:
+      Result := SizeOf(Boolean);
+
+    varString, varUString:
+      Result := Length(string(V)) * SizeOf(Char);
+
+    varOleStr:
+      Result := Length(WideString(V)) * SizeOf(WideChar);
+
+    varArray:
+      Result := (VarArrayHighBound(V, 1) - VarArrayLowBound(V, 1)) * VariantDataSize(VarArrayGet(V, [0]))
+
+  else
+    RaiseException('Tipo Variant not supported: %d', [vt]);
+  end;
+end;
+
 
 { TSyncThread }
 

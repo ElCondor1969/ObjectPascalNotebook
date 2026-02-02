@@ -141,14 +141,25 @@ begin
 end;
 
 class function TExecutionContext.Get(const NotebookId:string;ExecutionId:string):TExecutionContext;
-var Context:TExecutionContext;
+var Idx:integer;
+    Context:TExecutionContext;
 begin
-  for Context in ExecutionContextList do
-    if (Context.NotebookId=NotebookId) and ((ExecutionId='') or (Context.ExecutionId=ExecutionId)) then
-      begin
-        Result:=Context;
-        Exit;
-      end;
+  Idx:=0;
+  while (Idx<ExecutionContextList.Count) do
+    begin
+      Context:=ExecutionContextList[Idx];
+      if (Context.MustRestart) then
+        DestroyObject(Context)
+      else
+        begin
+          if (Context.NotebookId=NotebookId) and ((ExecutionId='') or (Context.ExecutionId=ExecutionId)) then
+            begin
+              Result:=Context;
+              Exit;
+            end;
+          Inc(Idx);
+        end;
+    end;
   if (ExecutionId='') then
     begin
       Result:=TExecutionContext.Create(NotebookId);

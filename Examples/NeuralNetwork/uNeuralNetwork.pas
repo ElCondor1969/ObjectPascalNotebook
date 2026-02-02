@@ -18,14 +18,15 @@ type
     function GetTensor: TTensor; virtual; abstract;
     procedure SetTensor(const Tensor: TTensor); virtual; abstract;
     function GetDims: array of integer; virtual; abstract;
-    function GetValue(Coors: array of integer): float; virtual; abstract;
-    procedure SetValue(Coors: array of integer; Value: float); virtual; abstract;
   public
     function ToOutput(BlockName: string=''): string;
+    function ReadData: TFloatArray; virtual; abstract;
+    procedure WriteData(Data: TFloatArray); virtual; abstract;
     property Tensor: TTensor read GetTensor write SetTensor;
     property Dims: array of integer read GetDims;
     // Coors -> [Row, Col]
-    property Value[Coors: array of integer]: float read GetValue write SetValue; default;
+    function GetValue(Data: TFloatArray; Coors: array of integer): float; 
+    procedure SetValue(Data: TFloatArray; Coors: array of integer; Value: float); 
   end;
 
   TTensorOperations=class(TObject)
@@ -40,7 +41,7 @@ type
     function TensAdd(const AA, BB: TTensor): TTensor; virtual; abstract;
     function TensSub(const AA, BB: TTensor): TTensor; virtual; abstract;
     function TensHadamard(const AA, BB: TTensor): TTensor; virtual; abstract;
-    function TensScale(const MM: TTensor; S: Double): TTensor; virtual; abstract;
+    function TensScale(const MM: TTensor; S: float): TTensor; virtual; abstract;
     function TensApply(const MM: TTensor; Act: TActivationFunction): TTensor; virtual; abstract;
     function TensDerivative(const MM: TTensor; Act: TActivationFunction): TTensor; virtual; abstract;
   end;
@@ -63,6 +64,10 @@ type
     function Forward(const Input: TTensor): TTensor;
   end;
 
+  TNeuralNetwork = class;
+
+  TNeuralLog = procedure(NN: TNeuralNetwork; const Msg: string; const Tensor: TTensor; TOP: TTensorOperations);
+
   TNeuralNetwork = class(TObject)
   private
     FActivation: TActivationFunction;
@@ -70,13 +75,15 @@ type
     FLayers: array of TLayer;
     FLearningRate: float;
     FLoss: float;
+    FNeuralLog: TNeuralLog;
   public
     constructor Create(const InputSize: integer; const Sizes: array of Integer; Activation: TActivationFunction; TensOp: TTensorOperations; LearningRate: float);
     destructor Destroy; override;
+    procedure SetNeuralLog(const NeuralLog: TNeuralLog);
     procedure AddLayers(const Sizes: array of Integer; Activation: TActivationFunction);
     function Predict(const Input: TTensor): TTensor;
     procedure Train(const Input, Target: TTensor);
-    property Loss:double read FLoss;
+    property Loss: float read FLoss;
   end;
 
   function DimsToString(Dims: array of integer): string;
@@ -93,14 +100,25 @@ end;
 
 { TTensorView }
 
+function TTensorView.GetValue(Data: TFloatArray; Coors: array of integer): float; 
+begin
+  Result:=Data[(Coors[0]-1)*Dims[1]+(Coors[1]-1)];
+end;
+
+procedure TTensorView.SetValue(Data: TFloatArray; Coors: array of integer; Value: float);
+begin
+  Data[(Coors[0]-1)*Dims[1]+(Coors[1]-1)]:=Value;
+end;
+
 function TTensorView.ToOutput(BlockName: string=''): string;
 begin
+  var Data := ReadData;
   var Output:='<table style="border-collapse:collapse; text-align:center; border:1px solid black;">';
   for var k:=1 to Dims[0] do
     begin
       Output+='<tr>';
       for var j:=1 to Dims[1] do
-        Output+=Format('<td style="padding:8px; border:1px solid black;">%g</td>',[Value[[k,j]]]);
+        Output+=Format('<td style="padding:8px; border:1px solid black;">%g</td>',[GetValue(Data,[k,j])]);
       Output+='</tr>';
     end;
   Output+='</table>';
@@ -154,7 +172,7 @@ end;
 
 { TNeuralNetwork }
 
-constructor TNeuralNetwork.Create(const InputSize: integer; const Sizes: array of Integer; Activation: TActivationFunction; TensOp: TTensorOperations; LearningRate: Double);
+constructor TNeuralNetwork.Create(const InputSize: integer; const Sizes: array of Integer; Activation: TActivationFunction; TensOp: TTensorOperations; LearningRate: float);
 begin
   FActivation := Activation;
   FTensOp := TensOp;
@@ -172,6 +190,11 @@ begin
     FLayers[k]:=nil;
   FLayers.Clear;
   inherited;
+end;
+
+procedure TNeuralNetwork.SetNeuralLog(const NeuralLog: TNeuralLog);
+begin
+  FNeuralLog := NeuralLog;
 end;
 
 procedure TNeuralNetwork.AddLayers(const Sizes: array of Integer; Activation: TActivationFunction);
@@ -193,7 +216,11 @@ var
 begin
   Result := Input;
   for i := 0 to High(FLayers) do
-    Result := FLayers[i].Forward(Result);
+    begin
+      Result := FLayers[i].Forward(Result);
+      if Assigned(FNeuralLog) then
+        FNeuralLog(Self, 'Output layer '+IntToStr(i), Result, FTensOp);
+    end;
 end;
 
 procedure TNeuralNetwork.Train(const Input, Target: TTensor);
@@ -208,12 +235,13 @@ begin
   try
     Z1 := FTensOp.TensSub(Target, FLayers[L].A);
     FLoss:=0;
-    var Z1View:=FTensOp.GetTensorView(Z1);
-    for var k:=1 to FLayers[L].FOutputSize do
-      FLoss+=Sqr(Z1View[[k,1]]); 
+    for var Value in FTensOp.GetTensorView(Z1).ReadData do
+      FLoss+=Sqr(Value); 
     Z2 := FTensOp.TensDerivative(FLayers[L].A, FLayers[L].FActivation);
     FTensOp.FreeTensor(FLayers[L].Delta);
     FLayers[L].Delta := FTensOp.TensHadamard(Z1,Z2);
+    if Assigned(FNeuralLog) then
+      FNeuralLog(Self, 'Delta layer  '+IntToStr(L), FLayers[L].Delta, FTensOp);
   finally
     FTensOp.FreeTensor(Z1);
     FTensOp.FreeTensor(Z2);
@@ -229,6 +257,8 @@ begin
       Z3 := FTensOp.TensDerivative(FLayers[i].A, FLayers[i].FActivation);
       FTensOp.FreeTensor(FLayers[i].Delta);
       FLayers[i].Delta := FTensOp.TensHadamard(Z2,Z3);
+      if Assigned(FNeuralLog) then
+        FNeuralLog(Self, 'Delta layer '+IntToStr(i), FLayers[i].Delta, FTensOp);
     finally
       FTensOp.FreeTensor(Z1);
       FTensOp.FreeTensor(Z2);
@@ -249,10 +279,12 @@ begin
         Z4 := -1;
         Z1 := FTensOp.TensTranspose(PrevA);
         Z2 := FTensOp.TensMul(FLayers[i].Delta, Z1);
-        Z3 := FTensOp.TensScale(Z2,FLearningRate);
+        Z3 := FTensOp.TensScale(Z2, FLearningRate);
         Z4 := FTensOp.TensAdd(FLayers[i].W, Z3);
         FTensOp.FreeTensor(FLayers[i].W);
         FLayers[i].W := Z4;
+        if Assigned(FNeuralLog) then
+          FNeuralLog(Self, 'Weights layer '+IntToStr(i), FLayers[i].W, FTensOp);
       finally
         FTensOp.FreeTensor(Z1);
         FTensOp.FreeTensor(Z2);
@@ -266,6 +298,8 @@ begin
         Z2 := FTensOp.TensAdd(FLayers[i].B, Z1);
         FTensOp.FreeTensor(FLayers[i].B);
         FLayers[i].B := Z2;
+        if Assigned(FNeuralLog) then
+          FNeuralLog(Self, 'Bias layer '+IntToStr(i), FLayers[i].B, FTensOp);
       finally
         FTensOp.FreeTensor(Z1);
       end;

@@ -3,7 +3,7 @@ unit uScriptExecuter;
 interface
 
 uses
-  System.Classes, dwsUtils, System.SysUtils, System.IOUtils, System.StrUtils, Variants, System.Types, Generics.Collections,
+  System.Classes, dwsUtils, System.SysUtils, System.IOUtils, System.StrUtils, System.Variants, System.Types, Generics.Collections,
   System.RegularExpressions, uDynLibLoader, JSON, uLibInterface, uUtility, dwsStrings, dwsComp, dwsExprs, dwsDataContext, 
   dwsCompiler, dwsFunctions, dwsStack, dwsClassesLibModule, dwsJSONConnector, dwsDataBaseLibModule, dwsLinq, dwsLinqSql, 
   dwsSymbols, dwsUnitSymbols, dwsScriptSource, dwsRTTIConnector, dwsRTTIFunctions;
@@ -35,7 +35,7 @@ type
         FDict:TDictionary<string,TUnitSearchInfo>;
         FLibraryDict:TDictionary<string,TLibInterface>;
         procedure CheckNamespace(const ANamespace:string);
-        procedure FreeLibrary(const ANamespace:string);
+        procedure FreeLibrary(const LibGUID:string);
       public
         constructor Create(AScriptExecuter: TScriptExecuter);
         procedure AfterConstruction;override;
@@ -80,7 +80,7 @@ type
     function GetConsoleOutputBlockPosition(const Output,IDBlock:string;out StartPos,EndPos:integer):boolean;
     procedure Import(const ANamespace,AValue:string);
     procedure AddUnit(const ANamespace,AUnitName,AUnitText:string);
-    function GetLibInterface(const ANamespace:string):TLibInterface;
+    function GetLibInterface(const LibGUID:string):TLibInterface;
     property ExecutionPath:string read FExecutionPath write FExecutionPath;
     property VariablesDictionary:TDictionary<string,variant> read FVariablesDictionary;
     property MustRestartFlag:boolean read GetMustRestartFlag write SetMustRestartFlag;
@@ -92,7 +92,7 @@ implementation
 {$R *.dfm}
 
 uses
-  uScriptUnitBaseLibrary, uUnitScripter;
+  uScriptUnitBaseLibrary;
 
 const
   varConsoleOutout='__CONSOLE_OUTPUT__';
@@ -118,7 +118,7 @@ begin
     TempStack.Assign(FStack);
   try
     if (FFlagPreserveStack) then
-      ProgramInfo.Free;
+      DestroyCostantObject(ProgramInfo);
     Result:=inherited;
     if (FFlagPreserveStack) then
       FStack.Assign(TempStack);
@@ -166,25 +166,25 @@ end;
 
 procedure TScriptExecuter.TUnitSearch.BeforeDestruction;
 var
-  Namespace: string;
+  LibGUID: string;
 begin
   inherited;
   try
-    for Namespace in FLibraryDict.Keys.ToArray do
-      FreeLibrary(Namespace);
+    for LibGUID in FLibraryDict.Keys.ToArray do
+      FreeLibrary(LibGUID);
   finally
     FLibraryDict.Free;
   end;
   FDict.Free;
 end;
 
-procedure TScriptExecuter.TUnitSearch.FreeLibrary(const ANamespace:string);
+procedure TScriptExecuter.TUnitSearch.FreeLibrary(const LibGUID:string);
 var
   Value: TLibInterface;
   LibFree: TLibFree;
   LibHandle: TDynLibHandle;
 begin
-  if (FLibraryDict.TryGetValue(ANamespace,Value)) then
+  if (FLibraryDict.TryGetValue(LibGUID,Value)) then
     begin
       LibHandle := Value.LibHandle;
       LibFree := TLibFree(GetDynProc(LibHandle, 'LibFree'));
@@ -193,7 +193,7 @@ begin
         FreeDynLib(LibHandle);
       except
       end;
-      FLibraryDict.Remove(ANamespace);
+      FLibraryDict.Remove(LibGUID);
     end;
 end;
 
@@ -221,7 +221,7 @@ end;
 
 procedure TScriptExecuter.TUnitSearch.ImportFromPath(const ANamespace,APath:string);
 const
-  FileExtensions:array[0..1] of string=('.pas', '.pp');
+  FileExtensions:array[0..2] of string=('.pas', '.pp', '.dll');
 var 
   Element, UnitName, UnitText, UnitTextCopy: string;
   FileList: TArray<string>;
@@ -242,32 +242,35 @@ begin
     end
   );
   for Element in FileList do
-    begin
-      UnitText:=TFile.ReadAllText(Element);
-      UnitTextCopy:=UnitText;
-      repeat
-        Match:=TRegEx.Match(UnitTextCopy,'/{[^}]*}',[roIgnoreCase,roMultiLine]);
-        if Match.Success then
-          Delete(UnitTextCopy,Match.Index,Match.Length);
-      until (not Match.Success);
-      repeat
-        Match:=TRegEx.Match(UnitTextCopy,'/\(\*[^}]*\*\)',[roIgnoreCase,roMultiLine]);
-        if Match.Success then
-          Delete(UnitTextCopy,Match.Index,Match.Length);
-      until (not Match.Success);
-      repeat
-        Match:=TRegEx.Match(UnitTextCopy,'\/\/(?:[ ]|\S)*',[roIgnoreCase,roMultiLine]);
-        if Match.Success then
-          Delete(UnitTextCopy,Match.Index,Match.Length);
-      until (not Match.Success);
-      Match:=TRegEx.Match(UnitTextCopy,'unit\s+(\S+)\s*;',[roIgnoreCase,roMultiLine]);
-      if (Match.Success) then
-        UnitName:=Match.Groups[1].Value
-      else
-        UnitName:=GetFileName(Element);
-      FScriptExecuter.InjectUnit(UnitText);
-      FScriptExecuter.AddUnit(ANameSpace,UnitName,UnitText);
-    end;
+    if (IsLibraryFile(Element)) then
+      ImportFromLibrary(ANamespace,Element)
+    else
+      begin
+        UnitText:=TFile.ReadAllText(Element);
+        UnitTextCopy:=UnitText;
+        repeat
+          Match:=TRegEx.Match(UnitTextCopy,'/{[^}]*}',[roIgnoreCase,roMultiLine]);
+          if Match.Success then
+            Delete(UnitTextCopy,Match.Index,Match.Length);
+        until (not Match.Success);
+        repeat
+          Match:=TRegEx.Match(UnitTextCopy,'/\(\*[^}]*\*\)',[roIgnoreCase,roMultiLine]);
+          if Match.Success then
+            Delete(UnitTextCopy,Match.Index,Match.Length);
+        until (not Match.Success);
+        repeat
+          Match:=TRegEx.Match(UnitTextCopy,'\/\/(?:[ ]|\S)*',[roIgnoreCase,roMultiLine]);
+          if Match.Success then
+            Delete(UnitTextCopy,Match.Index,Match.Length);
+        until (not Match.Success);
+        Match:=TRegEx.Match(UnitTextCopy,'unit\s+(\S+)\s*;',[roIgnoreCase,roMultiLine]);
+        if (Match.Success) then
+          UnitName:=Match.Groups[1].Value
+        else
+          UnitName:=GetFileName(Element);
+        FScriptExecuter.InjectUnit(UnitText);
+        FScriptExecuter.AddUnit(ANameSpace,UnitName,UnitText);
+      end;
 end;
 
 procedure TScriptExecuter.TUnitSearch.ImportFromLibrary(const ANamespace: string; const ALibraryName: string);
@@ -276,23 +279,30 @@ var
   LibInit: TLibInit;
   LibInterface: TLibInterface;
 begin
-  FreeLibrary(ANamespace);
   Value:=LoadDynLib(ALibraryName);
   if (Value = 0) then
     RaiseException('Error loading library: %s',[ALibraryName]);
   try
-    CheckNamespace(ANamespace);
     LibInit := TLibInit(GetDynProc(Value, 'LibInit'));
+    if (not(Assigned(LibInit))) then
+      begin
+        FreeDynLib(Value);
+        Exit;
+      end;
     LibInterface := Default(TLibInterface);
     with LibInterface do
       begin
         Context:=NativeInt(FScriptExecuter);
         Namespace:=PChar(ANamespace);
+        ExecutionPath:=PChar(ExtractFilePath(ALibraryName));
         LibHandle:=Value;
-        CreateUnitByDef:=CreateUnitByDefImpl;
       end;
     LibInit(@LibInterface);
-    FLibraryDict.AddOrSetValue(ANamespace,LibInterface);
+    if (LibInterface.LibGUID='') then
+      RaiseException('Library didn''t set GUID');
+    if FLibraryDict.ContainsKey(LibInterface.LibGUID) then
+      RaiseException('Library already imported');
+    FLibraryDict.AddOrSetValue(LibInterface.LibGUID,LibInterface);
   except
     FreeDynLib(Value);
     raise;
@@ -350,9 +360,9 @@ begin
 end;
 
 procedure TScriptExecuter.DelphiWebScriptInclude(const scriptName: string;
-  var scriptSource: string);
+  var ScriptSource: string);
 begin
-  scriptSource:=FUnitSearch.GetUnitCode(scriptName);
+  ScriptSource:=FUnitSearch.GetUnitCode(scriptName);
 end;
 
 function TScriptExecuter.DelphiWebScriptNeedUnit(const UnitName:string;var UnitSource:string):IdwsUnit;
@@ -704,9 +714,9 @@ begin
   FLibraryUnitAdded.Add(AUnitName);
 end;
 
-function TScriptExecuter.GetLibInterface(const ANamespace: string): TLibInterface;
+function TScriptExecuter.GetLibInterface(const LibGUID: string): TLibInterface;
 begin
-  if (FUnitSearch.FLibraryDict.TryGetValue(ANamespace, Result)) then
+  if (FUnitSearch.FLibraryDict.TryGetValue(LibGUID, Result)) then
     Exit;
   Result := Default(TLibInterface);
 end;

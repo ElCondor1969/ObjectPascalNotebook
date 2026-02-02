@@ -45,7 +45,7 @@ begin
       Context.Cancel;
     except
     end;
-    Response.AddPair('cancelled',TJSONTrue.Create);
+    WriteJSONValue(Response,'cancelled',true);
     AResponseInfo.ContentType:='application/json';
     AResponseInfo.ContentText:=Response.ToString;
   finally

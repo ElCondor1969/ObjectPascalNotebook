@@ -17,7 +17,7 @@ type
     function TensAdd(const AA, BB: TTensor): TTensor; override;
     function TensSub(const AA, BB: TTensor): TTensor; override;
     function TensHadamard(const AA, BB: TTensor): TTensor; override;
-    function TensScale(const MM: TTensor; S: Double): TTensor; override;
+    function TensScale(const MM: TTensor; S: float): TTensor; override;
     function TensApply(const MM: TTensor; Act: TActivationFunction): TTensor; override;
     function TensDerivative(const MM: TTensor; Act: TActivationFunction): TTensor; override;
   end;
@@ -30,7 +30,7 @@ type
   TMatrixEntry=record
     Freed: boolean;
     Dims: array of integer;
-    Matrix: TMatrix
+    Matrix: TMatrix;
   end;
 
   TMatrixDict=array [integer] of TMatrixEntry;
@@ -42,8 +42,8 @@ type
     function GetTensor: TTensor; override;
     procedure SetTensor(const Tensor: TTensor); override;
     function GetDims: array of integer; override;
-    function GetValue(Coors: array of integer): float; override;
-    procedure SetValue(Coors: array of integer; Value: float); override;
+    function ReadData: TFloatArray; override;
+    procedure WriteData(Data: TFloatArray); override;
   public
     constructor Create(const Tensor: TTensor); 
   end;
@@ -84,8 +84,7 @@ begin
       MatrixEntry.Freed:=true;
       MatrixDict[FTensor]:=MatrixEntry;
     end;
-  if (Tensor<>0) then
-    FTensor:=Tensor;
+  FTensor:=Tensor;
 end;
 
 function TNativeTensorView.GetDims: array of integer;
@@ -93,14 +92,25 @@ begin
   Result:=MatrixDict[FTensor].Dims;
 end;
 
-function TNativeTensorView.GetValue(Coors: array of integer): float;
+function TNativeTensorView.ReadData: TFloatArray;
+var
+  k: integer;
+  MatrixEntry: TMatrixEntry;
 begin
-  Result:=MatrixDict[FTensor].Matrix[Coors[0]-1][Coors[1]-1];
+  MatrixEntry:=MatrixDict[FTensor];
+  for k:=0 to MatrixEntry.Dims[0]-1 do
+    for var Value in MatrixEntry.Matrix[k] do
+      Result.Push(Value);
 end;
 
-procedure TNativeTensorView.SetValue(Coors: array of integer; Value: float);
+procedure TNativeTensorView.WriteData(Data: TFloatArray);
+var
+  k: integer;
+  MatrixEntry: TMatrixEntry;
 begin
-  MatrixDict[FTensor].Matrix[Coors[0]-1][Coors[1]-1]:=Value;
+  MatrixEntry:=MatrixDict[FTensor];
+  for k:=0 to MatrixEntry.Dims[0]-1 do
+    MatrixEntry.Matrix[k]:=Data.Copy(k*MatrixEntry.Dims[1],MatrixEntry.Dims[1]);
 end;
 
 { TNativeTensorOperations }
@@ -239,7 +249,7 @@ begin
       R[i][j] := A[i][j] * B[i][j];
 end;
 
-function TNativeTensorOperations.TensScale(const MM: TTensor; S: Double): TTensor;
+function TNativeTensorOperations.TensScale(const MM: TTensor; S: float): TTensor;
 var
   i, j: Integer;
   M, R: TMatrix;

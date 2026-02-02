@@ -1,0 +1,79 @@
+{
+  "cells": [
+    {
+      "kind": "code",
+      "value": "Restart; // Execute for release all resources and restart the execution of the notebook.",
+      "language": "ObjectPascal"
+    },
+    {
+      "kind": "markdown",
+      "value": "Import the **OpenBLAS** library.",
+      "language": "markdown"
+    },
+    {
+      "kind": "code",
+      "value": "Import('OpenBLAS','..\\OpenBLASLib\\Lib');",
+      "language": "ObjectPascal"
+    },
+    {
+      "kind": "markdown",
+      "value": "Print informations from library.",
+      "language": "markdown"
+    },
+    {
+      "kind": "code",
+      "value": "WriteLn('Thread number: ',GetNumThreads);\r\nWriteLn('Processors number: ',GetNumProcs);\r\nWriteLn('Config: ',GetConfig);\r\nWriteLn('Core name: ',GetCorename);",
+      "language": "ObjectPascal"
+    },
+    {
+      "kind": "markdown",
+      "value": "Function utility for print data matrix.",
+      "language": "markdown"
+    },
+    {
+      "kind": "code",
+      "value": "function ToOutput(Data: TArrayVariantArray; BlockName: string=''): string;\r\nbegin\r\n  var Output:='<table style=\"border-collapse:collapse; text-align:center; border:1px solid black;\">';\r\n  for var k:=0 to High(Data[0]) do\r\n    begin\r\n      Output+='<tr>';\r\n      for var j:=0 to High(Data[1]) do\r\n        Output+=Format('<td style=\"padding:8px; border:1px solid black;\">%g</td>',[Data[k][j]]);\r\n      Output+='</tr>';\r\n    end;\r\n  Output+='</table>';\r\n  Result:=TConsole.WriteBlock(Output,BlockName);\r\nend;",
+      "language": "ObjectPascal"
+    },
+    {
+      "kind": "markdown",
+      "value": "Instance the matrices.",
+      "language": "markdown"
+    },
+    {
+      "kind": "code",
+      "value": "var MatrixA:=InstantiateMatrix(2,2);\r\nvar MatrixB:=InstantiateMatrix(2,2);\r\nvar MatrixC:=InstantiateMatrix(2,2);",
+      "language": "ObjectPascal"
+    },
+    {
+      "kind": "markdown",
+      "value": "Writes values into matrices.",
+      "language": "markdown"
+    },
+    {
+      "kind": "code",
+      "value": "var Data: TArrayVariantArray;\r\n\r\n// Write matrix A.\r\nData.Clear;\r\nData.Push([1.0, 1.0]);\r\nData.Push([1.0, 1.0]);\r\nWriteMatrix(MatrixA,Data);\r\n\r\n// Write matrix B.\r\nData.Clear;\r\nData.Push([1.0, -2.0]);\r\nData.Push([-2.0, 1.0]);\r\nWriteMatrix(MatrixB,Data);\r\n\r\n// Write matrix C.\r\nData.Clear;\r\nData.Push([1.0, 2.0]);\r\nData.Push([-1.0, -2.0]);\r\nWriteMatrix(MatrixC,Data);",
+      "language": "ObjectPascal"
+    },
+    {
+      "kind": "markdown",
+      "value": "Do matrix operation.",
+      "language": "markdown"
+    },
+    {
+      "kind": "code",
+      "value": "dgemm(MatrixA, MatrixB, MatrixC, 1, 1);",
+      "language": "ObjectPascal"
+    },
+    {
+      "kind": "markdown",
+      "value": "Print the result.",
+      "language": "markdown"
+    },
+    {
+      "kind": "code",
+      "value": "Data:=ReadMatrix(MatrixC);\r\n\r\nToOutput(Data);",
+      "language": "ObjectPascal"
+    }
+  ]
+}
