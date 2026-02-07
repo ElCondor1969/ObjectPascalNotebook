@@ -12,7 +12,7 @@
     },
     {
       "kind": "code",
-      "value": "{$DEFINE TOP_MEMORY}\r\n{.$DEFINE TOP_NATIVE}",
+      "value": "{.$DEFINE TOP_MEMORY}\r\n{$DEFINE TOP_NATIVE}",
       "language": "ObjectPascal"
     },
     {
@@ -57,12 +57,12 @@
     },
     {
       "kind": "markdown",
-      "value": "Set the log procedure for the neural network.",
+      "value": "Uncomment for set the log procedure for the neural network.",
       "language": "markdown"
     },
     {
       "kind": "code",
-      "value": "NN.SetNeuralLog(\r\n  procedure(NN: TNeuralNetwork; const Msg: string; const Tensor: TTensor; TOP: TTensorOperations)\r\n  begin\r\n    WriteLn(Msg);\r\n    TOP.GetTensorView(Tensor).ToOutput;\r\n  end\r\n);",
+      "value": "(*\r\nNN.SetNeuralLog(\r\n  procedure(NN: TNeuralNetwork; const Msg: string; const Tensor: TTensor; TOP: TTensorOperations)\r\n  begin\r\n    WriteLn(Msg);\r\n    TOP.GetTensorView(Tensor).ToOutput;\r\n  end\r\n);\r\n*)",
       "language": "ObjectPascal"
     },
     {

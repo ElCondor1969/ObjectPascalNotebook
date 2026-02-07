@@ -1,6 +1,7 @@
 program HTTPServer;
 
 uses
+  //FastMM4,
   System.StartUpCopy,
   FMX.Forms,
   JSON,
@@ -12,6 +13,7 @@ uses
 var Configuration:TJSONobject;
 
 begin
+  //ReportMemoryLeaksOnShutdown:=true;
   Application.Initialize;
   DataModuleWebServer:=TDataModuleWebServer.Create(Application);
   Configuration:=TJSONObject.Create;

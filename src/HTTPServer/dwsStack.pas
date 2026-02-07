@@ -792,11 +792,12 @@ begin
   Source.InitStackDataPtr(SrcDC, 0);
   WriteData(0, SrcDC, 0-SrcDC.Addr, Source.FStackPointer);
 
+  ClearBPStore;
   SetLength(FBpStore,Length(Source.FBpStore));
   for k:=0 to High(FBpStore) do
     FBpStore[k]:=Source.FBpStore[k].Clone;
 
-  FDataPtrPool   := Source.FDataPtrPool;
+  FDataPtrPool:=Source.FDataPtrPool;
 end;
 
 

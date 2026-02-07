@@ -115,7 +115,10 @@ var
   TempStack:TStackMixIn;
 begin
   if (FFlagPreserveStack) then
-    TempStack.Assign(FStack);
+    begin
+      TempStack:=Default(TStackMixIn);
+      TempStack.Assign(FStack);
+    end;
   try
     if (FFlagPreserveStack) then
       DestroyCostantObject(ProgramInfo);
@@ -383,6 +386,7 @@ var k:integer;
     SymbolList: TObjectList<TSymbol>;
     Symbol: TSymbol;
     Match: TMatch;
+    StackParams: TStackParameters;
 
   procedure RestoreProgram;
   var
