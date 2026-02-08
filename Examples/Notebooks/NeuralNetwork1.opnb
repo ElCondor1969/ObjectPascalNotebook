@@ -3,7 +3,12 @@
     {
       "kind": "code",
       "value": "Restart; // Execute for release all resources and restart the execution of the notebook.",
-      "language": "ObjectPascal"
+      "language": "ObjectPascal",
+      "outputs": [
+        {
+          "value": "OK"
+        }
+      ]
     },
     {
       "kind": "markdown",
@@ -13,7 +18,12 @@
     {
       "kind": "code",
       "value": "{.$DEFINE TOP_MEMORY}\r\n{$DEFINE TOP_NATIVE}",
-      "language": "ObjectPascal"
+      "language": "ObjectPascal",
+      "outputs": [
+        {
+          "value": "OK"
+        }
+      ]
     },
     {
       "kind": "markdown",
@@ -23,7 +33,12 @@
     {
       "kind": "code",
       "value": "Import('N1','..\\NeuralNetwork');",
-      "language": "ObjectPascal"
+      "language": "ObjectPascal",
+      "outputs": [
+        {
+          "value": "OK"
+        }
+      ]
     },
     {
       "kind": "markdown",
@@ -33,7 +48,12 @@
     {
       "kind": "code",
       "value": "{$IFDEF TOP_MEMORY}\r\nImport('MemoryMatrices','..\\MemoryMatrices');\r\nImport('MemoryMatricesTOP','..\\MemoryMatricesTensorOperations');\r\n{$ENDIF}\r\n\r\n{$IFDEF TOP_NATIVE}\r\nImport('NativeTOP','..\\NativeTensorOperations');\r\n{$ENDIF}",
-      "language": "ObjectPascal"
+      "language": "ObjectPascal",
+      "outputs": [
+        {
+          "value": "OK"
+        }
+      ]
     },
     {
       "kind": "markdown",
@@ -43,7 +63,12 @@
     {
       "kind": "code",
       "value": "{$IFDEF TOP_MEMORY}\r\n  var TOP:=new TMemoryMatricesTensorOperations;\r\n{$ENDIF}\r\n\r\n{$IFDEF TOP_NATIVE}\r\n  var TOP:=new TNativeTensorOperations;\r\n{$ENDIF}",
-      "language": "ObjectPascal"
+      "language": "ObjectPascal",
+      "outputs": [
+        {
+          "value": "OK"
+        }
+      ]
     },
     {
       "kind": "markdown",
@@ -53,7 +78,12 @@
     {
       "kind": "code",
       "value": "var NN:=new TNeuralNetwork(3, [3,10,3], new TSigmoidActivation, TOP, 0.001);",
-      "language": "ObjectPascal"
+      "language": "ObjectPascal",
+      "outputs": [
+        {
+          "value": "OK"
+        }
+      ]
     },
     {
       "kind": "markdown",
@@ -63,7 +93,12 @@
     {
       "kind": "code",
       "value": "(*\r\nNN.SetNeuralLog(\r\n  procedure(NN: TNeuralNetwork; const Msg: string; const Tensor: TTensor; TOP: TTensorOperations)\r\n  begin\r\n    WriteLn(Msg);\r\n    TOP.GetTensorView(Tensor).ToOutput;\r\n  end\r\n);\r\n*)",
-      "language": "ObjectPascal"
+      "language": "ObjectPascal",
+      "outputs": [
+        {
+          "value": "OK"
+        }
+      ]
     },
     {
       "kind": "markdown",
@@ -73,7 +108,12 @@
     {
       "kind": "code",
       "value": "var Input:=TOP.InstantiateTensor([3,1]);\r\nvar InputView:=TOP.GetTensorView(Input);\r\nvar Target:=TOP.InstantiateTensor([3,1]);\r\nvar TargetView:=TOP.GetTensorView(Target);\r\nvar Output: TTensor;\r\nvar OutputView: TTensorView;",
-      "language": "ObjectPascal"
+      "language": "ObjectPascal",
+      "outputs": [
+        {
+          "value": "OK"
+        }
+      ]
     },
     {
       "kind": "markdown",
@@ -83,7 +123,12 @@
     {
       "kind": "code",
       "value": "TOP.TensRandomize(Input);\r\nInputView.ToOutput;",
-      "language": "ObjectPascal"
+      "language": "ObjectPascal",
+      "outputs": [
+        {
+          "value": "<!-- _console_output_start_consblok47515326_ --><table style=\"border-collapse:collapse; text-align:center; border:1px solid black;\"><tr><td style=\"padding:8px; border:1px solid black;\">-0,151144175887345</td></tr><tr><td style=\"padding:8px; border:1px solid black;\">0,332700803839736</td></tr><tr><td style=\"padding:8px; border:1px solid black;\">0,0332885603221962</td></tr></table><!-- _console_output_end_consblok47515326_ -->"
+        }
+      ]
     },
     {
       "kind": "markdown",
@@ -93,7 +138,12 @@
     {
       "kind": "code",
       "value": "Output:=NN.Predict(Input);\r\nOutputView:=TOP.GetTensorView(Output);\r\nOutputView.ToOutput;",
-      "language": "ObjectPascal"
+      "language": "ObjectPascal",
+      "outputs": [
+        {
+          "value": "<!-- _console_output_start_consblok33954364_ --><table style=\"border-collapse:collapse; text-align:center; border:1px solid black;\"><tr><td style=\"padding:8px; border:1px solid black;\">0,313121912199773</td></tr><tr><td style=\"padding:8px; border:1px solid black;\">0,507945431332933</td></tr><tr><td style=\"padding:8px; border:1px solid black;\">0,429661034563368</td></tr></table><!-- _console_output_end_consblok33954364_ -->"
+        }
+      ]
     },
     {
       "kind": "markdown",
@@ -103,7 +153,12 @@
     {
       "kind": "code",
       "value": "InputView.WriteData([\r\n  0.9,\r\n  0.1,\r\n  0.62\r\n]);\r\nTargetView.WriteData([\r\n  0.5,\r\n  0.4,\r\n  0.3\r\n]);\r\nbegin\r\n  for var k:=1 to 5000 do\r\n    begin\r\n      NN.Train(Input,Target);\r\n      if ((k mod 10)=0) then\r\n        TConsole.WriteBlock(Format('Loss: <b>%g</b><br>',[NN.Loss]),'BlkLoss');\r\n    end;\r\nend;\r\nTConsole.WriteBlock(Format('Loss: <b>%g</b><br>',[NN.Loss]),'BlkLoss');\r\nOutput:=NN.Predict(Input);\r\nOutputView:=TOP.GetTensorView(Output);\r\nOutputView.ToOutput;",
-      "language": "ObjectPascal"
+      "language": "ObjectPascal",
+      "outputs": [
+        {
+          "value": "<!-- _console_output_start_BlkLoss_ -->Loss: <b>0,007230820070978</b><br><!-- _console_output_end_BlkLoss_ --><!-- _console_output_start_consblok93776374_ --><table style=\"border-collapse:collapse; text-align:center; border:1px solid black;\"><tr><td style=\"padding:8px; border:1px solid black;\">0,435711409349815</td></tr><tr><td style=\"padding:8px; border:1px solid black;\">0,432636189870489</td></tr><tr><td style=\"padding:8px; border:1px solid black;\">0,34504963221532</td></tr></table><!-- _console_output_end_consblok93776374_ -->"
+        }
+      ]
     }
   ]
 }

@@ -13,7 +13,6 @@ type
     DelphiWebScript: TDelphiWebScript;
     dwsClassesLib: TdwsClassesLib;
     dwsJSONLibModule: TdwsJSONLibModule;
-    dwsRTTIConnector: TdwsRTTIConnector;
     function DelphiWebScriptNeedUnit(const UnitName: string;
       var UnitSource: string): IdwsUnit;
     procedure DelphiWebScriptInclude(const scriptName: string;

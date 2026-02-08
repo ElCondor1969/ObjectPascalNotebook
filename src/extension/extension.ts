@@ -13,24 +13,32 @@ export function activate(context: vscode.ExtensionContext) {
     'Object Pascal'
   );
 
-  controller.supportedLanguages = ['ObjectPascal', 'Pascal'];
+  controller.supportedLanguages = ['objectpascal', 'pascal'];
 
   const serializer = vscode.workspace.registerNotebookSerializer(
     'objectPascalNotebook',
     new PascalNotebookSerializer()
   );
 
-  // Configurazione porta server
+  // Server port configuration
   const config = vscode.workspace.getConfiguration('objectPascalNotebook');
-  let serverPort = config.get<number>('serverPort') ?? 9000;
+  let serverPort = config.get<number>('hostHTTPPort') ?? 9000;
 
   vscode.workspace.onDidChangeConfiguration(e => {
-    if (e.affectsConfiguration('objectPascalNotebook.serverPort')) {
-      serverPort = vscode.workspace.getConfiguration('objectPascalNotebook').get<number>('serverPort') ?? 9000;
+    if (e.affectsConfiguration('objectPascalNotebook.hostHTTPPort')) {
+      let oldServerPort = serverPort;
+      serverPort = vscode.workspace.getConfiguration('objectPascalNotebook').get<number>('hostHTTPPort') ?? 9000;
+
+      if (oldServerPort != serverPort) {
+        // Kill the host for force the new port to next executions.
+        fetch(`http://localhost:${oldServerPort}/out`, {
+          method: 'POST'
+        });
+      }
     }
   });
 
-  // Tracking esecuzioni attive (per cancellazione)
+  // Active executions tracking (for cancels)
   const runningExecutions = new Map<string, { cancel: () => void }>();
 
   controller.executeHandler = async (cells, notebook, _controller) => {
@@ -95,7 +103,7 @@ export function activate(context: vscode.ExtensionContext) {
                 delphiFolder = arch === 'arm64' ? 'OSXARM64' : 'OSX64';
               }
               const exe = path.join(context.extensionPath, 'dist', delphiFolder, exeName);
-              const args = [`--port=${serverPort}`];
+              const args = [`-port ${serverPort}`];
 
               const child = cp.spawn(exe, args, {
                 detached: true,

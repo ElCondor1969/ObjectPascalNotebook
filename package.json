@@ -7,7 +7,11 @@
     "url": "https://github.com/ElCondor1969/ObjectPascalNotebook.git"
   },
   "version": "0.0.1",
-  "publisher": "yourpublisher",
+  "publisher": "sergiorossi",
+  "author": {
+    "name": "Sergio Rossi",
+    "email": "elcondor.1969@gmail.com"
+  },
   "engines": {
     "vscode": "^1.90.0"
   },
@@ -18,6 +22,14 @@
     "onNotebookType:objectPascalNotebook"
   ],
   "main": "./dist/extension.js",
+  "files": [
+    "dist/**/*.js",
+    "dist/**/*.map",
+    "dist/Win64/OPNBHost.exe",
+    "package.json",
+    "README.md",
+    "LICENSE"
+  ],
   "contributes": {
     "notebooks": [
       {
@@ -30,7 +42,19 @@
         ],
         "priority": "default"
       }
-    ]
+    ],
+    "configuration": {
+      "title": "Object Pascal Notebook",
+      "properties": {
+        "objectPascalNotebook.hostHTTPPort": {
+          "type": "number",
+          "default": 9000,
+          "description": "HTTP port for OPNBHost.",
+          "minimum": 1024,
+          "maximum": 65535
+        }
+      }
+    }
   },
   "scripts": {
     "compile": "tsc -p ./",
@@ -39,6 +63,7 @@
     "package:linux": "vsce package --target linux-x64",
     "package:mac": "vsce package --target darwin-x64",
     "package:mac-arm": "vsce package --target darwin-arm64",
+    "package:vsix": "vsce package",
     "publish:win": "vsce publish --target win32-x64",
     "publish:linux": "vsce publish --target linux-x64",
     "publish:mac": "vsce publish --target darwin-x64",
