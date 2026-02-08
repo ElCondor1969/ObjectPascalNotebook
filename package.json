@@ -2,6 +2,10 @@
   "name": "object-pascal-notebook",
   "displayName": "Object Pascal Notebook Support",
   "description": "Adds Object Pascal language support to VSCode Notebooks.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ElCondor1969/ObjectPascalNotebook.git"
+  },
   "version": "0.0.1",
   "publisher": "yourpublisher",
   "engines": {
@@ -31,8 +35,15 @@
   "scripts": {
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
-    "package": "npx @vscode/vsce package",
-    "publish": "npx @vscode/vsce publish"
+    "package:win": "vsce package --target win32-x64",
+    "package:linux": "vsce package --target linux-x64",
+    "package:mac": "vsce package --target darwin-x64",
+    "package:mac-arm": "vsce package --target darwin-arm64",
+    "publish:win": "vsce publish --target win32-x64",
+    "publish:linux": "vsce publish --target linux-x64",
+    "publish:mac": "vsce publish --target darwin-x64",
+    "publish:mac-arm": "vsce publish --target darwin-arm64",
+    "publish:all": "npm run publish:win && npm run publish:linux && npm run publish:mac && npm run publish:mac-arm"
   },
   "devDependencies": {
     "@types/node": "^24.10.1",

@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { PascalNotebookSerializer } from './pascalNotebookSerializer';
+import * as process from 'process';
 import * as cp from 'child_process';
 import * as path from 'path';
 
@@ -75,7 +76,25 @@ export function activate(context: vscode.ExtensionContext) {
           if ((err instanceof Error) && (['TypeError', 'AbortError'].indexOf(err.name) !== -1)) {
             // Start bundled HTTP server executable if not responding or not in execution
             try {
-              const exe = path.join(context.extensionPath, 'dist', 'HTTPServer.exe');
+              const platformEXE: { [key: string]: string } = {
+                'win32': 'OPNBHost.exe',
+                'darwin': 'OPNBHost.app',
+                'linux': 'OPNBHost'
+              };
+              const platform = process.platform;
+              const arch = process.arch;
+              const exeName = platformEXE[platform];
+              let delphiFolder=''; 
+              if (platform === 'win32') {
+                delphiFolder = 'Win64';
+              } 
+              else if (platform === 'linux') {
+                delphiFolder = 'Linux64';
+              } 
+              else if (platform === 'darwin') {
+                delphiFolder = arch === 'arm64' ? 'OSXARM64' : 'OSX64';
+              }
+              const exe = path.join(context.extensionPath, 'dist', delphiFolder, exeName);
               const args = [`--port=${serverPort}`];
 
               const child = cp.spawn(exe, args, {
@@ -84,18 +103,18 @@ export function activate(context: vscode.ExtensionContext) {
                 stdio: ['ignore', 'pipe', 'pipe']
               });
 
-              console.log('Spawned HTTPServer.exe pid=', child.pid);
+              console.log('Spawned OPNBHost.exe pid=', child.pid);
               child.stdout?.on('data', (d) => {
-                console.log('[HTTPServer stdout] ' + d.toString());
+                console.log('[OPNBHost stdout] ' + d.toString());
               });
               child.stderr?.on('data', (d) => {
-                console.error('[HTTPServer stderr] ' + d.toString());
+                console.error('[OPNBHost stderr] ' + d.toString());
               });
               child.on('error', (err) => {
-                console.error('HTTPServer spawn error:', err);
+                console.error('OPNBHost spawn error:', err);
               });
               child.on('exit', (code, sig) => {
-                console.log(`HTTPServer exited. code=${code} sig=${sig}`);
+                console.log(`OPNBHost exited. code=${code} sig=${sig}`);
               });
               child.unref();
 
