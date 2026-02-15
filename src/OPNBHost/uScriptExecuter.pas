@@ -13,6 +13,7 @@ type
     DelphiWebScript: TDelphiWebScript;
     dwsClassesLib: TdwsClassesLib;
     dwsJSONLibModule: TdwsJSONLibModule;
+    dwsRTTIConnector: TdwsRTTIConnector;
     function DelphiWebScriptNeedUnit(const UnitName: string;
       var UnitSource: string): IdwsUnit;
     procedure DelphiWebScriptInclude(const scriptName: string;
@@ -53,6 +54,7 @@ type
     FProgram:IdwsProgram;
     FExecution:IdwsProgramExecution;
     FDestroying:boolean;
+    FOutputData:TJSONObject;
     procedure InjectUnit(var Script:string);
     function GetMustRestartFlag:boolean;
     procedure SetMustRestartFlag(const Value:boolean);
@@ -83,7 +85,8 @@ type
     property ExecutionPath:string read FExecutionPath write FExecutionPath;
     property VariablesDictionary:TDictionary<string,variant> read FVariablesDictionary;
     property MustRestartFlag:boolean read GetMustRestartFlag write SetMustRestartFlag;
-    property CancelPending:boolean read GetCancelPending write SetCancelPending; 
+    property CancelPending:boolean read GetCancelPending write SetCancelPending;
+    property OutputData:TJSONObject read FOutputData;
   end;
 
 implementation
@@ -223,7 +226,7 @@ end;
 
 procedure TScriptExecuter.TUnitSearch.ImportFromPath(const ANamespace,APath:string);
 const
-  FileExtensions:array[0..2] of string=('.pas', '.pp', '.dll');
+  FileExtensions:array[0..3] of string=('.pas', '.dll', '.dylib', '.so');
 var 
   Element, UnitName, UnitText, UnitTextCopy: string;
   FileList: TArray<string>;
@@ -342,6 +345,7 @@ begin
   Linq.Script:=DelphiWebScript;
   dwsLinqSql.TLinqSqlExtension.Create(DelphiWebScript).LinqFactory:=Linq;
   TScriptUnitBaseLibrary.Create(Self);
+  FOutputData:=TJSONObject.Create;
 end;
 
 procedure TScriptExecuter.BeforeDestruction;
@@ -352,6 +356,7 @@ begin
   FVariablesDictionary.Free;
   FLibraryUnitAdded.Free;
   FUnitSearch.Free;
+  FOutputData.Free;
   FExecution:=nil;
   FProgram:=nil;
 end;
@@ -428,6 +433,8 @@ var k:integer;
 begin
   SymbolList:=TObjectList<TSymbol>.Create(false);
   try
+    FOutputData.Free;
+    FOutputData:=TJSONObject.Create;
     FVariablesDictionary.Clear;
     FLibraryUnitAdded.Clear;
     InjectUnit(Script);

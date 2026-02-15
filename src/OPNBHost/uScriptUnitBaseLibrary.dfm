@@ -498,6 +498,17 @@ object ScriptUnitBaseLibrary: TScriptUnitBaseLibrary
           end>
         Overloaded = True
         OnEval = dwsUnitLibraryFunctionsImport_stringstring_Eval
+      end
+      item
+        Name = 'SetRemoteOPNBHost'
+        Parameters = <
+          item
+            Name = 'URL'
+            DataType = 'String'
+            IsVarParam = True
+            IsWritable = False
+          end>
+        OnEval = dwsUnitLibraryFunctionsSetRemoteOPNBHostEval
       end>
     UnitName = 'uBaseLibrary'
     StaticSymbols = False

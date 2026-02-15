@@ -21,4 +21,10 @@ object ScriptExecuter: TScriptExecuter
     Left = 208
     Top = 144
   end
+  object dwsRTTIConnector: TdwsRTTIConnector
+    Script = DelphiWebScript
+    StaticSymbols = False
+    Left = 208
+    Top = 48
+  end
 end

@@ -3,9 +3,9 @@ import { PascalNotebookSerializer } from './pascalNotebookSerializer';
 import * as process from 'process';
 import * as cp from 'child_process';
 import * as path from 'path';
+import { randomBytes } from 'crypto';
 
 export function activate(context: vscode.ExtensionContext) {
-  console.log('Object Pascal Notebook extension activated.');
 
   const controller = vscode.notebooks.createNotebookController(
     'object-pascal-notebook',
@@ -20,21 +20,65 @@ export function activate(context: vscode.ExtensionContext) {
     new PascalNotebookSerializer()
   );
 
-  // Server port configuration
-  const config = vscode.workspace.getConfiguration('objectPascalNotebook');
-  let serverPort = config.get<number>('hostHTTPPort') ?? 9000;
+  let oldServerPort = vscode.workspace.getConfiguration('objectPascalNotebook').get<number>('hostHTTPPort') ?? 9000;
 
-  vscode.workspace.onDidChangeConfiguration(e => {
+  function getOPNBHostURL(notebook?:vscode.NotebookDocument) {
+    if (!notebook || !notebook.metadata.urlOPNBHost) {
+      return `http://localhost:${oldServerPort}`;
+    }
+    else {
+      return notebook.metadata.urlOPNBHost;
+    }
+  }
+
+  async function applyMetadata(notebook:vscode.NotebookDocument, metadata: any) {
+    const edit = new vscode.WorkspaceEdit();
+    edit.set(notebook.uri, [
+      vscode.NotebookEdit.updateNotebookMetadata(metadata)
+    ]);
+    await vscode.workspace.applyEdit(edit);
+  }
+
+  const onChangeConfigurationSub = vscode.workspace.onDidChangeConfiguration(e => {
     if (e.affectsConfiguration('objectPascalNotebook.hostHTTPPort')) {
-      let oldServerPort = serverPort;
-      serverPort = vscode.workspace.getConfiguration('objectPascalNotebook').get<number>('hostHTTPPort') ?? 9000;
-
+      let serverPort = vscode.workspace.getConfiguration('objectPascalNotebook').get<number>('hostHTTPPort') ?? 9000;
       if (oldServerPort != serverPort) {
-        // Kill the host for force the new port to next executions.
+        // Kill the local host for force the new port to next executions.
         fetch(`http://localhost:${oldServerPort}/out`, {
           method: 'POST'
         });
+
+        oldServerPort = serverPort;
       }
+    }
+  });
+
+  const onOpenNotebookDocumentSub = vscode.workspace.onDidOpenNotebookDocument(async (notebook) => {
+
+    function generateRandomString(length: number): string {
+      return randomBytes(Math.ceil(length / 2)).toString('hex').slice(0, length);
+    }
+
+    if (notebook.notebookType === 'objectPascalNotebook') {
+      const updatedMetadata = {
+        ...notebook.metadata,
+        notebookId: generateRandomString(20),
+        urlOPNBHost: ''
+      };
+      applyMetadata(notebook,updatedMetadata);
+    }
+  });
+
+  const onCloseNotebookDocumentSub = vscode.workspace.onDidCloseNotebookDocument((notebook) => {
+    if (notebook.notebookType === 'objectPascalNotebook') {
+      fetch(`${getOPNBHostURL()}/cancel`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          notebookId: notebook.metadata.notebookId, 
+          executionId: '' 
+        })
+      });
     }
   });
 
@@ -42,7 +86,7 @@ export function activate(context: vscode.ExtensionContext) {
   const runningExecutions = new Map<string, { cancel: () => void }>();
 
   controller.executeHandler = async (cells, notebook, _controller) => {
-    const notebookId = notebook.uri.toString(),
+    const notebookId = notebook.metadata.notebookId,
           notebookPath = notebook.uri.fsPath.replace(/[/\\][^/\\]+$/, "");
 
     for (const cell of cells) {
@@ -69,7 +113,7 @@ export function activate(context: vscode.ExtensionContext) {
           const controller = new AbortController();
           const timeoutId = setTimeout(() => controller.abort(), 2000);
           
-          const pingResp = await fetch(`http://localhost:${serverPort}/ping`, {
+          const pingResp = await fetch(`${getOPNBHostURL(notebook)}/ping`, {
             method: 'GET',
             signal: controller.signal
           });
@@ -81,7 +125,8 @@ export function activate(context: vscode.ExtensionContext) {
           }
         } 
         catch (err) {
-          if ((err instanceof Error) && (['TypeError', 'AbortError'].indexOf(err.name) !== -1)) {
+          if ((err instanceof Error) && (['TypeError', 'AbortError'].indexOf(err.name) !== -1) &&
+              (notebook.metadata.urlOPNBHost=='')) {
             // Start bundled HTTP server executable if not responding or not in execution
             try {
               const platformEXE: { [key: string]: string } = {
@@ -103,7 +148,7 @@ export function activate(context: vscode.ExtensionContext) {
                 delphiFolder = arch === 'arm64' ? 'OSXARM64' : 'OSX64';
               }
               const exe = path.join(context.extensionPath, 'dist', delphiFolder, exeName);
-              const args = [`-port ${serverPort}`];
+              const args = [`-port ${oldServerPort}`];
 
               const child = cp.spawn(exe, args, {
                 detached: true,
@@ -139,7 +184,7 @@ export function activate(context: vscode.ExtensionContext) {
         }
         
         // Start execution
-        const startResp = await fetch(`http://localhost:${serverPort}/execute`, {
+        const startResp = await fetch(`${getOPNBHostURL(notebook)}/execute`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ notebookId, notebookPath, cell: cell.index, code })
@@ -161,7 +206,7 @@ export function activate(context: vscode.ExtensionContext) {
         let lastOffset = 0;
         while (!cancelled) {
           await new Promise(r => setTimeout(r, 500));
-          const pollResp = await fetch(`http://localhost:${serverPort}/output`, {
+          const pollResp = await fetch(`${getOPNBHostURL(notebook)}/output`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ notebookId, executionId, offset: lastOffset })
@@ -188,19 +233,25 @@ export function activate(context: vscode.ExtensionContext) {
 
           if (pollJson.finished) {
             exec.end(true);
+            if (pollJson.outputData && pollJson.outputData.UrlRemoteOPNBHost) {
+              const updatedMetadata = {
+                ...notebook.metadata,
+                urlOPNBHost: pollJson.outputData.UrlRemoteOPNBHost
+              };
+              applyMetadata(notebook, updatedMetadata);
+            }
             break;
           }
         }
 
         if (cancelled) {
-          await fetch(`http://localhost:${serverPort}/cancel`, {
+          await fetch(`${getOPNBHostURL(notebook)}/cancel`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ notebookId, executionId })
           });
           exec.end(false);
         }
-
       } 
       catch (err) {
         exec.replaceOutput([ new vscode.NotebookCellOutput([ vscode.NotebookCellOutputItem.text('Error:' + String(err), 'text/html') ]) ]);
@@ -219,7 +270,7 @@ export function activate(context: vscode.ExtensionContext) {
     vscode.window.showInformationMessage('Abort requested.');
   };
 
-  // Comando per annullare esecuzioni
+  // Comand for abort executions.
   const cancelCmd = vscode.commands.registerCommand('objectPascalNotebook.cancelExecution', () => {
     for (const [_, r] of runningExecutions) {
       r.cancel();
@@ -227,7 +278,21 @@ export function activate(context: vscode.ExtensionContext) {
     vscode.window.showInformationMessage('Abort requested.');
   });
 
-  context.subscriptions.push(controller, cancelCmd, serializer);
+  context.subscriptions.push(
+    controller,
+    cancelCmd,
+    serializer,
+    onChangeConfigurationSub,
+    onOpenNotebookDocumentSub,
+    onCloseNotebookDocumentSub
+  );
 }
 
-export function deactivate() {}
+export function deactivate() {
+  let serverPort = vscode.workspace.getConfiguration('objectPascalNotebook').get<number>('hostHTTPPort') ?? 9000;
+
+  // Kill the host.
+  fetch(`http://localhost:${serverPort}/out`, {
+    method: 'POST'
+  });
+}

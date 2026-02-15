@@ -27,11 +27,12 @@ end;
 
 procedure TServerOutputCommand.Execute(Server:TIdHTTPServer;ARequestInfo:TIdHTTPRequestInfo;AResponseInfo:TIdHTTPResponseInfo);
 var
-  Body,Response:TJSONObject;
+  Body,Response,OutputData:TJSONObject;
   NotebookId,ExecutionId,Output:string;
   Offset:integer;
   Context:TExecutionContext;
 begin
+  OutputData:=nil;
   Body:=ParseJSONObject(GetRequestBody(ARequestInfo));
   try
     Response:=TJSONObject.Create;
@@ -47,13 +48,17 @@ begin
       Output:=Context.Output;
       if (WriteJSONValue(Response,'finished',Context.Finished)) then
         Context.Cancel;
+      OutputData:=Context.OutputData.Clone as TJSONobject;
     except
       WriteJSONValue(Response,'finished',true);
       Output:='';
     end;
+    if (not Assigned(OutputData)) then
+      OutputData:=TJSONObject.Create;
     WriteJSONValue(Response,'cancelled',false);
     WriteJSONValue(Response,'chunk',Output);
     WriteJSONValue(Response,'completeOutput',Output);
+    WriteJSONValue(Response,'outputData',OutputData);
     AResponseInfo.ContentType:='application/json';
     AResponseInfo.ContentText:=Response.ToString;
   finally

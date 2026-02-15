@@ -23,6 +23,14 @@ begin
   try
     if FindCmdLineSwitch('port',Value) then
       WriteJSONValue(Configuration,'HTTPPort',StrToInt(Value));
+    if FindCmdLineSwitch('UseSSL',Value) then
+      WriteJSONValue(Configuration,'UseSSL',StrToBool(Value));
+    if FindCmdLineSwitch('CertPassword',Value) then
+      WriteJSONValue(Configuration,'CertPassword',Value);
+    if FindCmdLineSwitch('CertFile',Value) then
+      WriteJSONValue(Configuration,'CertFile',Value);
+    if FindCmdLineSwitch('CertKey',Value) then
+      WriteJSONValue(Configuration,'CertKey',Value);
     DataModuleWebServer.SetConfiguration(Configuration);
   finally
     Configuration.Free;

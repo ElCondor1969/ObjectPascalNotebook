@@ -40,6 +40,7 @@ type
     procedure dwsUnitLibraryFunctionsVarToStrEval(info: TProgramInfo);
     procedure dwsUnitLibraryFunctions__ArrayVariantArrayToVariantArrayEval(
       info: TProgramInfo);
+    procedure dwsUnitLibraryFunctionsSetRemoteOPNBHostEval(info: TProgramInfo);
   private
     { Private declarations }
     FScriptExecuter:TScriptExecuter;
@@ -73,8 +74,9 @@ type
 
 procedure TScriptUnitBaseLibrary.AddConsoleOutputRow(Info: TProgramInfo;
   BreakLine: boolean);
-var k:integer;
-    AMessage,Value:string;
+var
+  k:integer;
+  AMessage,Value:string;
 begin
   AMessage:=Info.ValueAsString['P1'];
   for k:=2 to 10 do
@@ -283,6 +285,12 @@ procedure TScriptUnitBaseLibrary.dwsUnitLibraryFunctionsRaiseException_String_Ev
   info: TProgramInfo);
 begin
   RaiseException(Info.ValueAsString['AMessage']);
+end;
+
+procedure TScriptUnitBaseLibrary.dwsUnitLibraryFunctionsSetRemoteOPNBHostEval(
+  Info: TProgramInfo);
+begin
+  WriteJSONValue(FScriptExecuter.OutputData,'UrlRemoteOPNBHost',Info.ValueAsString['URL']);
 end;
 
 procedure TScriptUnitBaseLibrary.dwsUnitLibraryFunctionsVarToFloatEval(

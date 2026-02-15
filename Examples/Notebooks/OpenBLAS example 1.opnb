@@ -1,9 +1,19 @@
 {
   "cells": [
     {
+      "kind": "markdown",
+      "value": "**WARNING!** Before using this notebook, you need to compile the [OpenBLASLib.dproj](https://github.com/ElCondor1969/ObjectPascalNotebook/blob/698d45c62704f6ef934f2bcc9859df598428ce2c/Examples/OpenBLASLib/OpenBLASLib.dproj) project to generate the necessary dynamic library inside the Lib folder.\r\n\r\nAfter that, you need to get the OpenBLAS dynamic library for your operating system (**\"libopenblas.dll\"** for Windows) from the OpenBLAS website and copy it into the \"Lib\" folder.",
+      "language": "markdown"
+    },
+    {
       "kind": "code",
       "value": "Restart; // Execute for release all resources and restart the execution of the notebook.",
-      "language": "ObjectPascal"
+      "language": "objectpascal",
+      "outputs": [
+        {
+          "value": "OK"
+        }
+      ]
     },
     {
       "kind": "markdown",
@@ -13,7 +23,12 @@
     {
       "kind": "code",
       "value": "Import('OpenBLAS','..\\OpenBLASLib\\Lib');",
-      "language": "ObjectPascal"
+      "language": "objectpascal",
+      "outputs": [
+        {
+          "value": "OK"
+        }
+      ]
     },
     {
       "kind": "markdown",
@@ -23,17 +38,27 @@
     {
       "kind": "code",
       "value": "WriteLn('Thread number: ',GetNumThreads);\r\nWriteLn('Processors number: ',GetNumProcs);\r\nWriteLn('Config: ',GetConfig);\r\nWriteLn('Core name: ',GetCorename);",
-      "language": "ObjectPascal"
+      "language": "objectpascal",
+      "outputs": [
+        {
+          "value": "Thread number: 4<br>Processors number: 4<br>Config: OpenBLAS 0.3.30 DYNAMIC_ARCH NO_AFFINITY Sandybridge MAX_THREADS=64<br>Core name: Sandybridge<br>"
+        }
+      ]
     },
     {
       "kind": "markdown",
-      "value": "Function utility for print data matrix.",
+      "value": "Utility function for print data matrix.",
       "language": "markdown"
     },
     {
       "kind": "code",
       "value": "function ToOutput(Data: TArrayVariantArray; BlockName: string=''): string;\r\nbegin\r\n  var Output:='<table style=\"border-collapse:collapse; text-align:center; border:1px solid black;\">';\r\n  for var k:=0 to High(Data[0]) do\r\n    begin\r\n      Output+='<tr>';\r\n      for var j:=0 to High(Data[1]) do\r\n        Output+=Format('<td style=\"padding:8px; border:1px solid black;\">%g</td>',[Data[k][j]]);\r\n      Output+='</tr>';\r\n    end;\r\n  Output+='</table>';\r\n  Result:=TConsole.WriteBlock(Output,BlockName);\r\nend;",
-      "language": "ObjectPascal"
+      "language": "objectpascal",
+      "outputs": [
+        {
+          "value": "OK"
+        }
+      ]
     },
     {
       "kind": "markdown",
@@ -43,7 +68,12 @@
     {
       "kind": "code",
       "value": "var MatrixA:=InstantiateMatrix(2,2);\r\nvar MatrixB:=InstantiateMatrix(2,2);\r\nvar MatrixC:=InstantiateMatrix(2,2);",
-      "language": "ObjectPascal"
+      "language": "objectpascal",
+      "outputs": [
+        {
+          "value": "OK"
+        }
+      ]
     },
     {
       "kind": "markdown",
@@ -53,7 +83,12 @@
     {
       "kind": "code",
       "value": "var Data: TArrayVariantArray;\r\n\r\n// Write matrix A.\r\nData.Clear;\r\nData.Push([1.0, 1.0]);\r\nData.Push([1.0, 1.0]);\r\nWriteMatrix(MatrixA,Data);\r\n\r\n// Write matrix B.\r\nData.Clear;\r\nData.Push([1.0, -2.0]);\r\nData.Push([-2.0, 1.0]);\r\nWriteMatrix(MatrixB,Data);\r\n\r\n// Write matrix C.\r\nData.Clear;\r\nData.Push([1.0, 2.0]);\r\nData.Push([-1.0, -2.0]);\r\nWriteMatrix(MatrixC,Data);",
-      "language": "ObjectPascal"
+      "language": "objectpascal",
+      "outputs": [
+        {
+          "value": "OK"
+        }
+      ]
     },
     {
       "kind": "markdown",
@@ -63,7 +98,12 @@
     {
       "kind": "code",
       "value": "dgemm(MatrixA, MatrixB, MatrixC, 1, 1);",
-      "language": "ObjectPascal"
+      "language": "objectpascal",
+      "outputs": [
+        {
+          "value": "OK"
+        }
+      ]
     },
     {
       "kind": "markdown",
@@ -73,7 +113,12 @@
     {
       "kind": "code",
       "value": "Data:=ReadMatrix(MatrixC);\r\n\r\nToOutput(Data);",
-      "language": "ObjectPascal"
+      "language": "objectpascal",
+      "outputs": [
+        {
+          "value": "<!-- _console_output_start_consblok61089364_ --><table style=\"border-collapse:collapse; text-align:center; border:1px solid black;\"><tr><td style=\"padding:8px; border:1px solid black;\">0</td><td style=\"padding:8px; border:1px solid black;\">1</td></tr><tr><td style=\"padding:8px; border:1px solid black;\">-2</td><td style=\"padding:8px; border:1px solid black;\">-3</td></tr></table><!-- _console_output_end_consblok61089364_ -->"
+        }
+      ]
     }
   ]
 }

@@ -38,11 +38,12 @@ begin
     if (NotebookId='') then
       RaiseException('NotebookId missing');
     ExecutionId:=Trim(ReadJSONValue(Body,'executionId',''));
-    if (ExecutionId='') then
-      RaiseException('ExecutionId missing');
     try
       Context:=TExecutionContext.Get(NotebookId,ExecutionId);
-      Context.Cancel;
+      if (ExecutionId='') then
+        DestroyObject(Context)
+      else
+        Context.Cancel;
     except
     end;
     WriteJSONValue(Response,'cancelled',true);

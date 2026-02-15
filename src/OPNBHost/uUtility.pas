@@ -44,6 +44,7 @@ function ReadJSONArray(AJSON:TJSONValue;const Name:string):TJSONArray;overload;
 function WriteJSONValue(AJSON:TJSONObject;const Name:string;Value:integer):integer;overload;
 function WriteJSONValue(AJSON:TJSONObject;const Name:string;Value:boolean):boolean;overload;
 function WriteJSONValue(AJSON:TJSONObject;const Name:string;Value:string):string;overload;
+function WriteJSONValue(AJSON:TJSONObject;const Name:string;Value:TJSONObject):TJSONObject;overload;
 function WriteJSONValue(AJSON:TJSONObject;const Name:string;Value:TJSONArray):TJSONArray;overload;
 function AddJSONElement(AJSON:TJSONArray;Element:TJSONArray):TJSONArray;overload;
 function AddJSONElement(AJSON:TJSONArray;Element:TJSONObject):TJSONObject;overload;
@@ -146,6 +147,12 @@ begin
 end;
 
 function WriteJSONValue(AJSON:TJSONObject;const Name:string;Value:TJSONArray):TJSONArray;
+begin
+  AJSON.AddPair(Name, Value);
+  Result:=Value;
+end;
+
+function WriteJSONValue(AJSON:TJSONObject;const Name:string;Value:TJSONObject):TJSONObject;
 begin
   AJSON.AddPair(Name, Value);
   Result:=Value;

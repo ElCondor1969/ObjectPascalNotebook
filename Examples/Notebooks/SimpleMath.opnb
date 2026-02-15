@@ -1,0 +1,74 @@
+{
+  "cells": [
+    {
+      "kind": "code",
+      "value": "Restart; // Execute for release all resources and restart the execution of the notebook.",
+      "language": "objectpascal",
+      "outputs": [
+        {
+          "value": "OK"
+        }
+      ]
+    },
+    {
+      "kind": "markdown",
+      "value": "Import the simple math library.",
+      "language": "markdown"
+    },
+    {
+      "kind": "code",
+      "value": "Import('MathLib','..\\SimpleMathLib');",
+      "language": "objectpascal",
+      "outputs": [
+        {
+          "value": "OK"
+        }
+      ]
+    },
+    {
+      "kind": "markdown",
+      "value": "Now we do some math.",
+      "language": "markdown"
+    },
+    {
+      "kind": "code",
+      "value": "var SC:=new TSimpleCalculator; // Instance the simple calculator object.",
+      "language": "objectpascal",
+      "outputs": [
+        {
+          "value": "OK"
+        }
+      ]
+    },
+    {
+      "kind": "code",
+      "value": "SC.InputNumber(5);\r\nSC.InputOperation('+');\r\nSC.InputNumber(8);\r\nWriteLn('Result 1=',SC.Result);",
+      "language": "objectpascal",
+      "outputs": [
+        {
+          "value": "Result 1=13<br>"
+        }
+      ]
+    },
+    {
+      "kind": "code",
+      "value": "SC.InputOperation('-');\r\nSC.InputNumber(10);\r\nWriteLn('Result 2=',SC.Result);",
+      "language": "objectpascal",
+      "outputs": [
+        {
+          "value": "Result 2=3<br>"
+        }
+      ]
+    },
+    {
+      "kind": "code",
+      "value": "SC.InputOperation('*');\r\nSC.InputNumber(2);\r\nWriteLn('Result 3=',SC.Result);",
+      "language": "objectpascal",
+      "outputs": [
+        {
+          "value": "Result 3=6<br>"
+        }
+      ]
+    }
+  ]
+}

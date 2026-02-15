@@ -3,7 +3,12 @@
     {
       "kind": "code",
       "value": "Restart; // Execute for release all resources and restart the execution of the notebook.",
-      "language": "ObjectPascal"
+      "language": "objectpascal",
+      "outputs": [
+        {
+          "value": "OK"
+        }
+      ]
     },
     {
       "kind": "markdown",
@@ -13,7 +18,12 @@
     {
       "kind": "code",
       "value": "WriteLn('One','Two');\r\nTConsole.Write('A','B');\r\nTConsole.WriteLn('C');",
-      "language": "ObjectPascal"
+      "language": "objectpascal",
+      "outputs": [
+        {
+          "value": "OneTwo<br>ABC<br>"
+        }
+      ]
     },
     {
       "kind": "markdown",
@@ -23,7 +33,12 @@
     {
       "kind": "code",
       "value": "WriteLn('String that nobody will read');\r\nTConsole.Clear;\r\nTConsole.WriteLn('I''m the only output');",
-      "language": "ObjectPascal"
+      "language": "objectpascal",
+      "outputs": [
+        {
+          "value": "I'm the only output<br>"
+        }
+      ]
     },
     {
       "kind": "markdown",
@@ -33,7 +48,12 @@
     {
       "kind": "code",
       "value": "TConsole.WriteBlock('My name is <b>Sergio</b>','blk1');\r\nSleep(2000);\r\nTConsole.WriteBlock('Now is <b>Sergio Rossi</b>','blk1');\r\nSleep(2000);\r\nTConsole.WriteBlock('What''s your name?<br>','blk1', bpPrior);",
-      "language": "ObjectPascal"
+      "language": "objectpascal",
+      "outputs": [
+        {
+          "value": "What's your name?<br><!-- _console_output_start_blk1_ -->Now is <b>Sergio Rossi</b><!-- _console_output_end_blk1_ -->"
+        }
+      ]
     },
     {
       "kind": "markdown",
@@ -43,17 +63,32 @@
     {
       "kind": "code",
       "value": "procedure CreateStyleProgressBar;\r\nbegin\r\n  Write(#' \r\n    <style>\r\n        .progress-container {\r\n            width: 100%;\r\n            max-width: 400px;\r\n            background-color: #e0e0e0;\r\n            border-radius: 8px;\r\n            overflow: hidden;\r\n            position: relative;\r\n            height: 30px;\r\n        }\r\n\r\n        .progress-bar {\r\n            height: 100%;\r\n            background-color: #4caf50;\r\n            transition: width 0.3s ease;\r\n        }\r\n\r\n        .progress-text {\r\n            position: absolute;\r\n            width: 100%;\r\n            height: 100%;\r\n            top: 0;\r\n            left: 0;\r\n            display: flex;\r\n            align-items: center;\r\n            justify-content: center;\r\n            font-weight: bold;\r\n            color: #000;\r\n        }\r\n    </style>\r\n  ');\r\nend;",
-      "language": "ObjectPascal"
+      "language": "objectpascal",
+      "outputs": [
+        {
+          "value": "OK"
+        }
+      ]
     },
     {
       "kind": "code",
       "value": "procedure UpdateProgressBar(const Perc: float);\r\nbegin\r\n  var PercStr:=FloatToStr(Perc)+'%';\r\n  var Output:array of string=[\r\n    '<div class=\"progress-container\">',\r\n    '  <div class=\"progress-bar\" style=\"width: %s;\"></div>',\r\n    '  <div class=\"progress-text\">%s</div>',\r\n    '</div>'\r\n  ];\r\n  TConsole.WriteBlock(Format(Output.Join(' '),[PercStr, PercStr]), 'Blk1');\r\nend;",
-      "language": "ObjectPascal"
+      "language": "objectpascal",
+      "outputs": [
+        {
+          "value": "OK"
+        }
+      ]
     },
     {
       "kind": "code",
       "value": "WriteLn('Operation started...');\r\nCreateStyleProgressBar;\r\nUpdateProgressBar(0);\r\nSleep(1000);\r\nUpdateProgressBar(10);\r\nSleep(2000);\r\nUpdateProgressBar(40);\r\nSleep(1000);\r\nUpdateProgressBar(75);\r\nSleep(2000);\r\nUpdateProgressBar(90);\r\nSleep(1000);\r\nUpdateProgressBar(100);\r\nWriteLn('Done!');\r\n",
-      "language": "ObjectPascal"
+      "language": "objectpascal",
+      "outputs": [
+        {
+          "value": "Operation started...<br><style>\r\n    .progress-container {\r\n        width: 100%;\r\n        max-width: 400px;\r\n        background-color: #e0e0e0;\r\n        border-radius: 8px;\r\n        overflow: hidden;\r\n        position: relative;\r\n        height: 30px;\r\n    }\r\n\r\n    .progress-bar {\r\n        height: 100%;\r\n        background-color: #4caf50;\r\n        transition: width 0.3s ease;\r\n    }\r\n\r\n    .progress-text {\r\n        position: absolute;\r\n        width: 100%;\r\n        height: 100%;\r\n        top: 0;\r\n        left: 0;\r\n        display: flex;\r\n        align-items: center;\r\n        justify-content: center;\r\n        font-weight: bold;\r\n        color: #000;\r\n    }\r\n</style>\r\n<!-- _console_output_start_Blk1_ --><div class=\"progress-container\">   <div class=\"progress-bar\" style=\"width: 100%;\"></div>   <div class=\"progress-text\">100%</div> </div><!-- _console_output_end_Blk1_ -->Done!<br>"
+        }
+      ]
     },
     {
       "kind": "markdown",
@@ -63,7 +98,12 @@
     {
       "kind": "code",
       "value": "WriteLn('A generic text.');\r\nTCOnsole.WriteBlock('Tic...toc...tic...toc...','blk1');\r\nSleep(3000);\r\nTCOnsole.DeleteBlock('blk1');",
-      "language": "ObjectPascal"
+      "language": "objectpascal",
+      "outputs": [
+        {
+          "value": "A generic text.<br>"
+        }
+      ]
     }
   ]
 }

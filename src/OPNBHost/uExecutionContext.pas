@@ -26,11 +26,12 @@ type
     FScriptExecuter:TScriptExecuter;
     FScript:string;
     function GetOutput:string;
+    function GetOutputData:TJSONobject;
   public
     constructor Create(ANotebookId:string);
     procedure AfterConstruction;override;
     procedure BeforeDestruction;override;
-    function Execute(const Script:string):string;
+    procedure Execute(const Script:string);
     procedure Cancel;
     function Finished:boolean;
     function MustRestart:boolean;
@@ -38,6 +39,7 @@ type
     property ExecutionId:string read FExecutionId;
     property NotebookPath:string read FNotebookPath write FNotebookPath;
     property Output:string read GetOutput;
+    property OutputData:TJSONobject read GetOutputData;
   public
     class function Get(const NotebookId:string;ExecutionId:string=''):TExecutionContext;
   end;
@@ -111,7 +113,7 @@ begin
   ExecutionContextList.Extract(Self);
 end;
 
-function TExecutionContext.Execute(const Script:string):string;
+procedure TExecutionContext.Execute(const Script:string);
 begin
   if (Assigned(FExecutionThread)) then
     RaiseException('Execution already in progress');
@@ -133,6 +135,11 @@ end;
 function TExecutionContext.GetOutput:string;
 begin
   Result:=FScriptExecuter.GetConsoleOutput;
+end;
+
+function TExecutionContext.GetOutputData:TJSONobject;
+begin
+  Result:=FScriptExecuter.OutputData;
 end;
 
 function TExecutionContext.MustRestart:boolean;
