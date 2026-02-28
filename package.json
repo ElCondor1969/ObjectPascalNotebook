@@ -28,6 +28,7 @@
     "dist/**/*.js",
     "dist/**/*.map",
     "dist/Win64/OPNBHost.exe",
+    "media/OPNB-128.png",
     "package.json",
     "README.md",
     "CHANGELOG.md",
