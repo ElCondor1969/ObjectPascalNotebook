@@ -6,7 +6,7 @@ This extension allows you to have notebooks in Object Pascal.
 The script execution engine uses the excellent [**DWScript**](https://github.com/EricGrange/DWScript) library; in addition to implementing most of the Delphi syntax, the library introduces many improvements to the language, such as the implementation of a garbage collector for object lifecycle management.
 To learn more about all the features the library offers, in addition to referring to the related online documentation, we recommend studying the test cases available at this [address](https://github.com/EricGrange/DWScript/tree/master/Test).
 
-**Notice**: If you would like to collaborate to make this extension available for operating systems other than Windows, please read [here](#help-wanted).
+**Notice**: If you would like to collaborate to make this extension available for operating systems other than Windows, please read [here](#help-needed).
 
 ## Notebook Example
 
@@ -14,7 +14,7 @@ To activate the extension, simply create or open a file with the extension **opn
 VSCode will display the usual notebook interface.
 After that, simply populate the notebook with our code cells and Markdown descriptions:
 
-![Figure 1](https://github.com/ElCondor1969/ObjectPascalNotebook/media/nb-example-1.png?raw=true)
+![Figure 1](media/nb-example-1.png?raw=true)
 
 ## The OPNBHost Process
 
@@ -35,13 +35,13 @@ Once a notebook is executed, its execution context is maintained by OPNBHost. Th
 
 If at some point you need to delete the entire execution context of a notebook because you want to re-run it from the beginning as if it were the first time, simply use the special **Restart** instruction:
 
-![Figure 2](https://github.com/ElCondor1969/ObjectPascalNotebook/media/nb-restart-1.png?raw=true)
+![Figure 2](media/nb-restart-1.png?raw=true)
 
 The **Restart** instruction must be the only instruction within a cell.
 
 ## Formatting Cell Output
 
-The following notebook example (https://github.com/ElCondor1969/ObjectPascalNotebook/Examples/Notebooks/Output%20examples.opnb) shows how to generate formatted output for our cells to meet our display needs, more complex than simply displaying a message.
+The following notebook [example](Examples/Notebooks/Output%20examples.opnb) shows how to generate formatted output for our cells to meet our display needs, more complex than simply displaying a message.
 
 ## Import Libraries
 
@@ -55,7 +55,7 @@ Import('Namespace', 'Library Path');
 The first parameter, *Namespace*, although not currently used, must be specified and must be unique with respect to other *import* statements.
 The second parameter must be the path to the folder containing the library files to be referenced.
 
-The following example [notebook](https://github.com/ElCondor1969/ObjectPascalNotebook/Examples/Notebooks/SimpleMath.opnb) shows how to import a library defined in DWScript.
+The following example [notebook](Examples/Notebooks/SimpleMath.opnb) shows how to import a library defined in DWScript.
 
 ### Import Process Algorithm
 
@@ -82,11 +82,11 @@ Normally, for cleaner and easier use, the code in the cells will not communicate
 
 Therefore, the recommended architecture for a library author is to provide one (or more) *Units* that act as an interface between the notebook and the dynamic library:
 
-![Architecture](https://github.com/ElCondor1969/ObjectPascalNotebook/media/lib-arch-1.png?raw=true)
+![Architecture](media/lib-arch-1.png?raw=true)
 
 The interface unit will provide notebooks with all available functionality, as documented by the library authors; all implementation and communication details between the interface unit and the dynamic library will be internal to the library itself and will not be visible from the outside.
 
-We will use the [**MemoryMatrices**](https://github.com/ElCondor1969/ObjectPascalNotebook/Examples/MemoryMatrices) example library as a model for the explanations that follow.
+We will use the [**MemoryMatrices**](Examples/MemoryMatrices) example library as a model for the explanations that follow.
 
 ### Writing the Dynamic Library
 
@@ -226,7 +226,7 @@ The code simply checks which procedure was invoked and calls the corresponding i
 
 #### The **uMemoryMatrices** Interface Unit
 
-This [unit](https://github.com/ElCondor1969/ObjectPascalNotebook/Examples/MemoryMatrices/Lib/uMemoryMatrices.pas) represents the interface code between the user notebooks and the dynamic library. As explained above, this *unit* will provide the notebooks with the functionality provided by the library, in the most convenient way possible, while hiding the entire implementation of the dialog with the dynamic library.
+This [unit](Examples/MemoryMatrices/Lib/uMemoryMatrices.pas) represents the interface code between the user notebooks and the dynamic library. As explained above, this *unit* will provide the notebooks with the functionality provided by the library, in the most convenient way possible, while hiding the entire implementation of the dialog with the dynamic library.
 The public definition of the *unit* is as follows:
 
 ```pascal
@@ -244,7 +244,7 @@ function HadamardMatrices(const MatrixHandleA, MatrixHandleB: integer): integer;
 function ScaleMatrix(const MatrixHandle: integer; S: float): integer;
 ```
 
-As we can see, the *unit* defines all the procedures and functions that can be used by cells. An example of using the library can be found in this [notebook](https://github.com/ElCondor1969/ObjectPascalNotebook/Examples/Notebooks/Memory%20Matrices%20example%201.opnb).
+As we can see, the *unit* defines all the procedures and functions that can be used by cells. An example of using the library can be found in this [notebook](Examples/Notebooks/Memory%20Matrices%20example%201.opnb).
 
 To close the loop, we need to understand how the *unit* communicates with its corresponding dynamic library. To do so, let's take the implementation of the **ReadMatrixInfo** procedure as an illustrative example:
 
@@ -282,7 +282,7 @@ However, there may be cases in which it's better to run a notebook not on our ma
 
 This is possible by using the **SetRemoteOPNBHost** instruction at the beginning of our notebook:
 
-![SetRemoteOPNBHost](https://github.com/ElCondor1969/ObjectPascalNotebook/media/nb-remote-host-1.png)
+![SetRemoteOPNBHost](media/nb-remote-host-1.png)
 
 The instruction must be the only instruction in the cell, and after its execution, all executions of the notebook's cells will be redirected to the specified host.
 Obviously, an instance of the OPNB process must already be running on the remote machine, otherwise execution requests will be ignored.
