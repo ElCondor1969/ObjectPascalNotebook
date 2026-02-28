@@ -19,7 +19,8 @@
     "Notebooks"
   ],
   "activationEvents": [
-    "onNotebookType:objectPascalNotebook"
+    "onNotebookType:objectPascalNotebook",
+    "onCommand:object-pascal-notebook.newNotebook"
   ],
   "main": "./dist/extension.js",
   "files": [
@@ -28,6 +29,7 @@
     "dist/Win64/OPNBHost.exe",
     "package.json",
     "README.md",
+    "CHANGELOG.md",
     "LICENSE"
   ],
   "contributes": {
@@ -41,6 +43,20 @@
           }
         ],
         "priority": "default"
+      }
+    ],
+    "notebookEditor": [
+      {
+        "viewType": "objectPascalNotebook",
+        "displayName": "Object Pascal Notebook",
+        "priority": "default"
+      }
+    ],
+    "commands": [
+      {
+        "command": "object-pascal-notebook.newNotebook",
+        "title": "New Object Pascal Notebook",
+        "category": "Object Pascal"
       }
     ],
     "configuration": {

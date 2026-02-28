@@ -20,6 +20,15 @@ export function activate(context: vscode.ExtensionContext) {
     new PascalNotebookSerializer()
   );
 
+  // Register the new notebook command.
+  const newNotebookCommand = vscode.commands.registerCommand('object-pascal-notebook.newNotebook', async () => {
+    const data = new vscode.NotebookData([
+      new vscode.NotebookCellData(vscode.NotebookCellKind.Code, '', 'objectpascal')
+    ]);
+    const doc = await vscode.workspace.openNotebookDocument('objectPascalNotebook', data);
+    await vscode.window.showNotebookDocument(doc);
+  });
+
   let oldServerPort = vscode.workspace.getConfiguration('objectPascalNotebook').get<number>('hostHTTPPort') ?? 9000;
 
   function getOPNBHostURL(notebook?:vscode.NotebookDocument) {
@@ -284,7 +293,8 @@ export function activate(context: vscode.ExtensionContext) {
     serializer,
     onChangeConfigurationSub,
     onOpenNotebookDocumentSub,
-    onCloseNotebookDocumentSub
+    onCloseNotebookDocumentSub,
+    newNotebookCommand
   );
 }
 

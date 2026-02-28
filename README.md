@@ -1,234 +1,236 @@
 # Object Pascal Notebook
 ## VSCode Notebook by Object Pascal.
 
-Questa estensione permette di avere a disposizione notebook in Object Pascal.
+This extension allows you to have notebooks in Object Pascal.
 
-Il motore di esecuzione degli script usa l'ottima libreria [**DWScript**](https://github.com/EricGrange/DWScript); la libreria, oltre ad implementare la maggior parte della sintassi di Delphi, introduce molte migliorie al linguaggio, come l'implementazione di un *garbage collector* per la gestione del ciclo di vita degli oggetti.
-Per conoscere nel dettaglio tutte le funzionalità che la libreria mette a disposizione, oltre a fare riferimento alla relativa documentazione in linea, è consigliabile studiare i casi di test presenti a questo [indirizzo](https://github.com/EricGrange/DWScript/tree/master/Test).
+The script execution engine uses the excellent [**DWScript**](https://github.com/EricGrange/DWScript) library; in addition to implementing most of the Delphi syntax, the library introduces many improvements to the language, such as the implementation of a garbage collector for object lifecycle management.
+To learn more about all the features the library offers, in addition to referring to the related online documentation, we recommend studying the test cases available at this [address](https://github.com/EricGrange/DWScript/tree/master/Test).
 
-**Avviso**: Se vuoi collaborare per rendere disponibile questa estensione anche per altri sistemi operativi oltre a Windows, per favore leggi [qui](#aiuto-cercasi).
+**Notice**: If you would like to collaborate to make this extension available for operating systems other than Windows, please read [here](#help-wanted).
 
-## Esempio di notebook
+## Notebook Example
 
-Per attivare l'estesione, basterà creare o aprire un file con estensione **opnb**.
-VSCode mostrerà l'usuale interfaccia grafica di un notebook.
-Dopo di che, sarà sufficiente popolare il notebook con le nostre celle di codice e di descrizioni markdown:
+To activate the extension, simply create or open a file with the extension **opnb**.
+VSCode will display the usual notebook interface.
+After that, simply populate the notebook with our code cells and Markdown descriptions:
 
-![Figura 1](media\nb-example-1.png)
+![Figure 1](https://github.com/ElCondor1969/ObjectPascalNotebook/media/nb-example-1.png?raw=true)
 
-## Il processo OPNBHost
+## The OPNBHost Process
 
-Ogni notebook aperto in VSCode demanda l'esecuzione delle sue celle ad una applicazione apposita di nome **OPNBHost**. Questa applicazione è lanciata in esecuzione automaticamente dall'estensione ogni volta che è necessario ed ha il compito di eseguire e restituire i risultati di ogni cella eseguita. **OPNBHost** implementa un server HTTP tramite il quale la comunicazione tra l'estensione e la stessa applicazione è resa possibile.
-La porta HTTP di ascolto, per default è la 9000, ma l'utente può modificarla a piacimento tramite l'apposita opzione dell'estensione.
+Each notebook opened in VSCode delegates the execution of its cells to a dedicated application called **OPNBHost**. This application is automatically launched by the extension whenever necessary and is responsible for executing and returning the results of each executed cell. **OPNBHost** implements an HTTP server that enables communication between the extension and the application itself.
+The default HTTP listening port is 9000, but the user can change it as desired using the extension's corresponding option.
 
-### Problemi con antivirus
+### Antivirus Issues
 
-OPNBHost è un server HTTP e la sua attività di aprire una porta HTTP lo potrebbe far considerare sospetto agli occhi di un antivirus. Normalmente l'antivirus mostra un messaggio per chiedergli se il file sia da considerarsi attendibile o meno e, in questi casi, basterà rispondere affermativamente per evitare problemi futuri. Se ciò non accadesse, basterà aggiungere OPNBHost alla lista dei file di esclusione dell'antivirus utilizzato.
+OPNBHost is an HTTP server, and its activity of opening an HTTP port could make it suspicious to an antivirus program. Antivirus programs typically display a message asking whether the file is trustworthy or not. In these cases, simply answering yes will avoid future problems. If this doesn't happen, simply add OPNBHost to your antivirus program's exclusion list.
 
-### Avaria di OPNBHost
+### OPNBHost Failure
 
-Se l'esecuzione di un notebook ha dei problemi al di fuori di quelli normalmente previsti, allora il problema risiederà, molto probabilmente, ad una qualche avaria dell'host. Per risolvere la problematica, basterà terminare forzatamente il processo OPNBHost; esso verrà rilanciato in esecuzione automaticamente dall'estensione alla prossima esecuzione di una cella.
+If a notebook encounters problems outside of the expected range, the problem is most likely due to a host failure. To resolve this issue, simply forcefully terminate the OPNBHost process; the extension will automatically restart it the next time a cell is executed.
 
-## L'istruzione speciale "Restart"
+## The "Restart" Special Instruction
 
-Una volta che un notebook viene eseguito, il relativo contesto di esecuzione è mantenuto da OPNBHost. Quindi, man mano che vengono dichiarati tipi, strutture, varibili e quant'altro, tutto ciò viene mantenuto persitente dall'host e messo a disposizione per l'esecuzione successiva di altre celle.
+Once a notebook is executed, its execution context is maintained by OPNBHost. Therefore, as types, structures, variables, and so on are declared, everything is kept persistent by the host and made available for subsequent execution of other cells.
 
-Se ad un certo punto si ha la necessità di eliminare tutto il contesto di esecuzione di un notebook, perché desideriamo rieseguirlo dall'inizio come se fosse la prima volta, basterà ricorrere all'istruzione speciale **Restart**:
+If at some point you need to delete the entire execution context of a notebook because you want to re-run it from the beginning as if it were the first time, simply use the special **Restart** instruction:
 
-![Figura 2](media\nb-restart-1.png)
+![Figure 2](https://github.com/ElCondor1969/ObjectPascalNotebook/media/nb-restart-1.png?raw=true)
 
-L'istruzione **Restart** deve essere l'unica istruzione presente all'interno di una cella.
+The **Restart** instruction must be the only instruction within a cell.
 
-## Formattazione dell'output delle celle
+## Formatting Cell Output
 
-Il seguente [notebook](Examples\Notebooks\Output%20examples.opnb) di esempio mostra come generare degli output formattati per le nostre celle per soddifare le nostre esigenze di visualizzazione più complesse di quelle di mostrare un semplice messaggio. 
+The following notebook example (https://github.com/ElCondor1969/ObjectPascalNotebook/Examples/Notebooks/Output%20examples.opnb) shows how to generate formatted output for our cells to meet our display needs, more complex than simply displaying a message.
 
-## Import libraries
+## Import Libraries
 
-E' possibile importare all'interno di un notebook tutte le librerie che sono necessarie all'esecuzione del nostro notebook. Queste librerie possono essere scritte da noi stessi per le nostre finalità oppure utilizzare quelle che altri vorranno mettere a disposizione per noi.
-Per importare una libreria è possibile utilizzare l'istruzione speciale **Import**, che possiede il prototipo seguente:
+You can import all the libraries needed to run your notebook into a notebook. These libraries can be written by you for your own purposes or used by others.
+To import a library, you can use the special **Import** statement, which has the following prototype:
 
 ```Delphi
-Import('Namespace', 'Percorso della libreria');
+Import('Namespace', 'Library Path');
 ```
 
-Il primo parametro, *Namespace*, pur attualmente non utilizzato, deve essere comunque specificato e dev'essere univoco rispetto alle altre istruzioni *import* presenti.
-Il secondo parametro deve essere invece il percorso della cartella in cui si trovano i file della libreria da referenziare.
+The first parameter, *Namespace*, although not currently used, must be specified and must be unique with respect to other *import* statements.
+The second parameter must be the path to the folder containing the library files to be referenced.
 
-Il seguente [notebook](Examples\Notebooks\SimpleMath.opnb) di esempio mostra come importare una libreria definita in DWScript.
+The following example [notebook](https://github.com/ElCondor1969/ObjectPascalNotebook/Examples/Notebooks/SimpleMath.opnb) shows how to import a library defined in DWScript.
 
-### Algoritmo del processo di importazione
+### Import Process Algorithm
 
-Quando l'istruzione **Import** viene eseguita essa implementerà i passi seguenti:
+When the **Import** statement is executed, it will implement the following steps:
 
-1. Partendo dal percorso della cartella specificata, vengono censiti tutti i file con estensione *pas, dll, so e dylib* (le estensioni delle librerie dinamiche saranno in funzione del sistema operativo presente). La ricerca si estende anche in profondità, iterando ricorsivamente tutte le sottocartelle incontrate.
-2. Terminato il censimento, per ogni file:
-    - Se il file ha estensione *pas* allora questo viene considerato come una libreria *Unit* e messa a disposizione di tutte le celle del notebook. Le celle non avranno bisogno di specificare l'istruzione *Uses* per usare queste librerie, in quanto queste dichiarazioni sono da considerarsi implicite.
-    - Se il file è una libreria dinamica, allora OPNB caricherà tale libreria all'interno del processo, se tale libreria è effettivamente una libreria conforme a OPNB. Vedremo più avanti come scrivere una libreria conforme. Lo scopo di queste librerie dinamiche è quello di mettere a disposizione del nostro notebook applicazioni, framework e risorse native esterne.
+1. Starting from the path of the specified folder, all files with the extensions *pas, dll, so, and dylib* are listed (the extensions of dynamic libraries will depend on the operating system). The search also extends in depth, recursively iterating through all subfolders encountered.
+2. Once the census is complete, for each file:
+- If the file has the *pas* extension, it is considered a *Unit* library and made available to all notebook cells. Cells will not need to specify the *Uses* statement to use these libraries, as these declarations are implicit.
+- If the file is a dynamic library, then OPNB will load that library into the process, provided that the library is indeed an OPNB-compliant library. We'll see how to write a compliant library later. The purpose of these dynamic libraries is to make external applications, frameworks, and native resources available to our notebook.
 
-## Scrittura di una libreria conforme
+## Writing a Compliant Library
 
-In questo capitolo spiegheremo come scrivere una libreria dinamica che OPNB possa caricare e mettere a disposizione dei nostri notebook.
+In this chapter, we'll explain how to write a dynamic library that OPNB can load and make available to our notebooks.
 
-Come spiegheremo più avanti, il programma OPNB è scritto in Delphi, utilizzando il framework FMX per generare eseguibili per più sistemi operativi (quelli previsti da FMX). 
-Anche le librerie dinamiche, attualmente, dovranno essere scritte in Delphi FMX.
+As we'll explain later, the OPNB program is written in Delphi, using the FMX framework to generate executables for multiple operating systems (those supported by FMX).
 
-Detto questo, in futuro e se ve ne fosse veramente la necessità, si potrebbe prevedere la possibilità di utilizzare un qualsiasi altro linguaggio, come ad esempio il C o C++. Per far questo, si dovranno progettare strutture dati che permettano lo scambio di dati senza conflitti di memoria e relativi *memory leaks* e che funzionino in sistemi operativi diversi.
+Dynamic libraries, currently, must also be written in Delphi FMX.
 
-### Architettura generale
+That said, in the future, if truly necessary, we could consider using any other language, such as C or C++. To do this, we'll need to design data structures that allow data exchange without memory conflicts and related *memory leaks* and that work on different operating systems.
 
-Normalmente, per un utilizzo più pulito e più agevole, il codice presente nelle celle non andranno a dialogare direttamente con una libreria dinamica; questo perché, anche se questo è effettivamente possibile, il codice sarebbe oltremodo complesso e complicato, oltre al fatto che la cella dovrebbe conoscere il protocollo di comunicazione tra OPNB e la libreria importata e questo, per librerie non scritte da noi, non è detto che sia possibile.
+### General Architecture
 
-Pertanto, l'architettura consigliata che l'autore di una libreria dovrà seguire, è quella di prevedere una (o più) *Unit* che faccia da interfaccia tra il notebook e la libreria dinamica:
+Normally, for cleaner and easier use, the code in the cells will not communicate directly with a dynamic library; This is because, even if this is indeed possible, the code would be extremely complex and complicated, in addition to the fact that the cell would need to know the communication protocol between OPNB and the imported library, which, for libraries not written by us, is not necessarily possible.
 
-![Architettura](media\lib-arch-1.png)
+Therefore, the recommended architecture for a library author is to provide one (or more) *Units* that act as an interface between the notebook and the dynamic library:
 
-La unit di interfaccia metterà a disposizione dei notebook tutte le funzionalità disponibili, secondo quanto documentato dagli autori della libreria; tutti i dettagli di implementazione e di comunicazione tra la unit di interfaccia e la libreria dinamica saranno interni alla stessa libreria e non saranno visibili dall'esterno.
+![Architecture](https://github.com/ElCondor1969/ObjectPascalNotebook/media/lib-arch-1.png?raw=true)
 
-Useremo la libreria di esempio [**MemoryMatrices**](https://github.com/ElCondor1969/ObjectPascalNotebook/tree/698d45c62704f6ef934f2bcc9859df598428ce2c/Examples/MemoryMatrices) come modello per le spiegazioni che seguiranno.
+The interface unit will provide notebooks with all available functionality, as documented by the library authors; all implementation and communication details between the interface unit and the dynamic library will be internal to the library itself and will not be visible from the outside.
 
-### Scrittura della libreria dinamica
+We will use the [**MemoryMatrices**](https://github.com/ElCondor1969/ObjectPascalNotebook/Examples/MemoryMatrices) example library as a model for the explanations that follow.
 
-Una libreria dinamica dovrà esporre le seguenti due procedure:
+### Writing the Dynamic Library
+
+A dynamic library must expose the following two procedures:
 
 ```pascal
 procedure LibInit(const ALibInterface: PLibInterface); cdecl;
 begin
-  with ALibInterface^ do
-    begin
-      LibGUID:='{2970D979-84FB-4B42-B730-F596BEC20E2F}';
-      InvokeLibProc:=InvokeLibProcImpl;
-    end;
-  // Follow the initialization code
+with ALibInterface^ do
+begin
+LibGUID:='{2970D979-84FB-4B42-B730-F596BEC20E2F}';
+InvokeLibProc:=InvokeLibProcImpl;
+end;
+// Follow the initialization code
 end;
 
 procedure LibFree(const ALibInterface: PLibInterface); cdecl;
 begin
-  // Follow the resources release code
+// Follow the resources release code
 end;
 
 exports
-  LibInit,
-  LibFree;
+LibInit,
+LibFree;
 ```
 
-Senza la presenza delle procedure **LibInit** e **LibFree** il processo OPNB non caricherà mai la nostra libreria.
+Without the **LibInit** and **LibFree** procedures, the OPNB process will never load our library.
 
-Il progetto dovrà utilizzare la unit **uLibInterface** che dichiarirà tutti i tipi e i record necessari:
+The project will have to use the **uLibInterface** unit which will declare all the necessary types and records:
 
 ```pascal
-type
-  TInvokeLibProc = function(Context, Instance: NativeInt; const ProcName: PChar; var Args:array of variant): Variant; cdecl;
+type 
+TInvokeLibProc = function(Context, Instance: NativeInt; const ProcName: PChar; var Args:array of variant): Variant; cdecl; 
 
-  PLibInterface = ^TLibInterface;
-  TLibInterface = record
-    Version: Integer;
-    Context: NativeInt;
-    Namespace: PChar;
-    ExecutionPath: PChar;
-    LibHandle: TDynLibHandle;
-    LibGUID: PChar;
-    InvokeLibProc: TInvokeLibProc;
-  end;
+PLibInterface = ^TLibInterface; 
+TLibInterface = record 
+Version: Integer; 
+Context: NativeInt; 
+Namespace: PChar; 
+ExecutionPath: PChar; 
+LibHandle: TDynLibHandle; 
+LibGUID: PChar; 
+InvokeLibProc: TInvokeLibProc; 
+end;
 ```
 
-La procedura **LibInit** riceve un puntatore al record **TLibInterface**; ci sono due campi di questo record che vanno obbligatoriamente valorizzati per farli acquisire dal processo OPNB, e sono:
+The **LibInit** procedure receives a pointer to the **TLibInterface** record; There are two fields in this record that must be filled in for the OPNB process to acquire them:
 
 1. **LibGUID**
 2. **InvokeLibProc**
 
-Il campo **LibGUID** deve essere valorizzato con il GUID che permetterà di individuare la nostra libreria all'interno del processo. Ogni libreria conforme OPNB dovrà possedere il proprio GUID univoco. Tale informazione, come vedremo, è fondamentale per permettere la cerniera tra la libreria dinamica e le unit di interfaccia della libreria.
+The **LibGUID** field must be filled in with the GUID that will allow our library to be identified within the process. Each OPNB-compliant library must have its own unique GUID. This information, as we will see, is essential for enabling the link between the dynamic library and the library's interface units.
 
-Il campo **InvokeLibProc** deve essere valorizzato con un puntatore a quella che sarà la procedura di comunicazione tra il processo OPNB e la libreria dinamica e che dovrà essere di tipo **TInvokeLibProc** visto sopra.
-Quando il processo OPNB richiederà delle funzionalità, lo farà invocando opportunamente questa procedura.
+The **InvokeLibProc** field must be filled in with a pointer to the communication procedure between the OPNB process and the dynamic library, which must be of the **TInvokeLibProc** type, as seen above.
+When the OPNB process requests functionality, it will do so by invoking this procedure appropriately.
 
-### La libreria **MemoryMatrices**
+### The **MemoryMatrices** Library
 
-Illustrato le regole e la struttura di base per la nostra libreria, continuiamo la nostra spiegazione servendoci della libreria di esempio **MemoryMatrices**.
+Having illustrated the rules and basic structure of our library, we continue our explanation using the **MemoryMatrices** sample library.
 
-Questa libreria vuole consentire le operazioni di base tra vettori e matrici, ma eseguite non al livello di script ma a livello di codice della macchina. Infatti sia il codice delle celle che quello delle *unit* viene eseguito tramite la sua interpretazione a run-time, laddove il codice di una libreria dinamica viene eseguito nativamente e quindi in maniera sensibilmente più veloce.
+This library aims to enable basic operations between vectors and matrices, but performed not at the script level but at the machine code level. In fact, both the cell and unit code are executed through its runtime interpretation, whereas the code of a dynamic library is executed natively and therefore significantly faster.
 
-La libreria mette a disposizione le funzionalità seguenti:
-1. Allocazione in memoria di vettori e matrici di dimensioni qualsiasi.
-2. Lettura e scrittura di un vettore o matrice allocati.
-3. Operazioni di:
-    - Moltiplicazione
-    - Trasposizione
-    - Somma
-    - Sottrazione
-    - Hadamard
-    - Moltiplicazione scalare
+The library provides the following features:
+1. Memory allocation of vectors and matrices of any size.
+2. Reading and writing an allocated vector or matrix.
 
-#### Il progetto di libreria dinamica MemoryMatrices 
+3. Operations:
+- Multiplication
+- Transposition
+- Addition
+- Subtraction
+- Hadamard
+- Scalar Multiplication
 
-Questo progetto Delphi FMX implementa la nostra libreria dinamica di esempio. Affinché sia una libreria conforme, essa
-definirà le due procedure **LibInit** e **LibFree** in questo modo:
+#### The MemoryMatrices Dynamic Library Project
+
+This Delphi FMX project implements our sample dynamic library. To ensure it is a compliant library, it
+will define the two procedures **LibInit** and **LibFree** as follows:
 
 ```pascal
 procedure LibInit(const ALibInterface: PLibInterface); cdecl;
 begin
-  with ALibInterface^ do
-    begin
-      LibGUID:='{2970D979-84FB-4B42-B730-F596BEC20E2F}';
-      InvokeLibProc:=InvokeLibProcImpl;
-    end;
-  MatrixDict:=TDictionary<integer, TMatrixEntry>.Create;
+with ALibInterface^ do
+begin
+LibGUID:='{2970D979-84FB-4B42-B730-F596BEC20E2F}';
+InvokeLibProc:=InvokeLibProcImpl;
+end;
+MatrixDict:=TDictionary<integer, TMatrixEntry>.Create;
 end;
 
 procedure LibFree(const ALibInterface: PLibInterface); cdecl;
 begin
-  FreeMatrixDict;
+FreeMatrixDict;
 end;
 ```
 
-Non è lo scopo di questo capitolo spiegare come la libreria gestisce il ciclo di vita delle matrici ed implementa le operazioni elencate sopra; quello che ci interessa è vedere come rendere possibile la comunicazione tra il processo OPNB e la libreria. Infatti, la libreria implementa la procedura **InvokeLibProcImpl**, quella il cui puntatore è stato passato alla variabile **InvokeLibProc**, nel seguente modo:
+It is not the purpose of this chapter to explain how the library manages the matrix lifecycle and implements the operations listed above; our focus is on how to enable communication between the OPNB process and the library. In fact, the library implements the procedure **InvokeLibProcImpl**, the one whose pointer was passed to the variable **InvokeLibProc**, as follows:
 
 ```pascal
 function InvokeLibProcImpl(Context, Instance: NativeInt; const ProcName: PChar; var Args:array of variant): Variant; cdecl;
-begin
-  if (SameText(ProcName,'InstantiateMatrix')) then
-    Result:=InstantiateMatrix(Args[0], Args[1], Args[2], Args[3])
-  else if (SameText(ProcName,'FreeMatrix')) then
-    FreeMatrix(Args[0])
-  else if (SameText(ProcName,'ReadMatrixInfo')) then
-    ReadMatrixInfo(Args[0], Args[1], Args[2])
-  else if (SameText(ProcName,'ReadMatrix')) then
-    Result:=ReadMatrix(Args[0], Args[1], Args[2])
-  else if (SameText(ProcName,'WriteMatrix')) then
-    WriteMatrix(Args[0],Args[1])
-  else if (SameText(ProcName,'RandomizeMatrix')) then
-    RandomizeMatrix(Args[0],Args[1])
-  else if (SameText(ProcName,'MulMatrices')) then
-    Result:=MulMatrices(Args[0],Args[1])
-  else if (SameText(ProcName,'TransposeMatrix')) then
-    Result:=TransposeMatrix(Args[0])
-  else if (SameText(ProcName,'AddMatrices')) then
-    Result:=AddMatrices(Args[0],Args[1])
-  else if (SameText(ProcName,'SubMatrices')) then
-    Result:=SubMatrices(Args[0],Args[1])
-  else if (SameText(ProcName,'HadamardMatrices')) then
-    Result:=HadamardMatrices(Args[0],Args[1])
-  else if (SameText(ProcName,'ScaleMatrix')) then
-    Result:=ScaleMatrix(Args[0],Args[1])
-  else
-    RaiseException('Proc "%s" unknown',[ProcName]);
+begin 
+if (SameText(ProcName,'InstantiateMatrix')) then 
+Result:=InstantiateMatrix(Args[0], Args[1], Args[2], Args[3]) 
+else if (SameText(ProcName,'FreeMatrix')) then 
+FreeMatrix(Args[0]) 
+else if (SameText(ProcName,'ReadMatrixInfo')) then 
+ReadMatrixInfo(Args[0], Args[1], Args[2]) 
+else if (SameText(ProcName,'ReadMatrix')) then 
+Result:=ReadMatrix(Args[0], Args[1], Args[2]) 
+else if (SameText(ProcName,'WriteMatrix')) then 
+WriteMatrix(Args[0],Args[1]) 
+else if (SameText(ProcName,'RandomizeMatrix')) then 
+RandomizeMatrix(Args[0],Args[1]) 
+else if (SameText(ProcName,'MulMatrices')) then 
+Result:=MulMatrices(Args[0],Args[1]) 
+else if (SameText(ProcName,'TransposeMatrix')) then 
+Result:=TransposeMatrix(Args[0]) 
+else if (SameText(ProcName,'AddMatrices')) then 
+Result:=AddMatrices(Args[0],Args[1]) 
+else if (SameText(ProcName,'SubMatrices')) then 
+Result:=SubMatrices(Args[0],Args[1]) 
+else if (SameText(ProcName,'HadamardMatrices')) then 
+Result:=HadamardMatrices(Args[0],Args[1]) 
+else if (SameText(ProcName,'ScaleMatrix')) then
+Result:=ScaleMatrix(Args[0],Args[1])
+else
+RaiseException('Proc "%s" unknown',[ProcName]);
 end;
 ```
 
-Come osserviamo sopra, chi ha invocato la libreria dall'esterno specifica:
-- Il riferimento all'eventuale oggetto/risorsa tramite il parametro **Instance**.
-- Il nome della procedura/metodo tramite il parametro **ProcName**.
-- La lista delle varibiabili di ingresso e/o di uscita da utilizzare nell'invocazione, tramite il parametro **Args**.
+As noted above, whoever invokes the library from outside specifies:
+- The reference to the object/resource, if any, via the **Instance** parameter.
+- The name of the procedure/method via the **ProcName** parameter.
+- The list of input and/or output variables to use in the invocation, via the **Args** parameter.
 
-Il codice non fa altro che vedere quale procedura è stata invocata e chiamare la relativa procedura/funzione di implementazione. Ovviamente, per ogni procedura invocata, il numero dei parametri e dei relativi significati cambia e questo dev'essere a conoscenza del chiamante.
+The code simply checks which procedure was invoked and calls the corresponding implementation procedure/function. Obviously, for each procedure invoked, the number of parameters and their meanings changes, and the caller must be aware of this.
 
-#### La unit di interfaccia **uMemoryMatrices**
+#### The **uMemoryMatrices** Interface Unit
 
-Questa [unit](Examples\MemoryMatrices\Lib\uMemoryMatrices.pas) rappresenta il codice di interfaccia tra i notebook utilizzatori e la libreria dinamica. Come spiegavamo sopra, questa *unit* offrirà ai notebook le funzionalità messe a disposizione dalla libreria, nel modo più comodo possibile, nascondendo al contempo tutta l'implementazione di dialogo con la libreria dinamica.
-La definizione pubblica della *unit* è la seguente:
+This [unit](https://github.com/ElCondor1969/ObjectPascalNotebook/Examples/MemoryMatrices/Lib/uMemoryMatrices.pas) represents the interface code between the user notebooks and the dynamic library. As explained above, this *unit* will provide the notebooks with the functionality provided by the library, in the most convenient way possible, while hiding the entire implementation of the dialog with the dynamic library.
+The public definition of the *unit* is as follows:
 
 ```pascal
-function InstantiateMatrix(const NumRows, NumCols: integer; Initialize:boolean=false; Value: float=0): integer;
+function InstantiateMatrix(const NumRows, NumCols: integer; Initialize: boolean=false; Value: float=0): integer;
 procedure FreeMatrix(const MatrixHandle: integer);
 procedure ReadMatrixInfo(const MatrixHandle: integer; var NumRows, NumCols: integer);
 function ReadMatrix(const MatrixHandle: integer): TArrayVariantArray;
@@ -242,76 +244,76 @@ function HadamardMatrices(const MatrixHandleA, MatrixHandleB: integer): integer;
 function ScaleMatrix(const MatrixHandle: integer; S: float): integer;
 ```
 
-Come osserviamo, la *unit* definisce tutte le procedure e funzioni utilizzabili dalle celle. Un esempio di utilizzo della libreria può essere trovato in questo [notebook](Examples\Notebooks\Memory%20Matrices%20example%201.opnb).
+As we can see, the *unit* defines all the procedures and functions that can be used by cells. An example of using the library can be found in this [notebook](https://github.com/ElCondor1969/ObjectPascalNotebook/Examples/Notebooks/Memory%20Matrices%20example%201.opnb).
 
-Per chiudere il cerchio ci manca di capire come la *unit* comunica con la sua corrispondente libreria dinamica. Per farlo, prendiamo come esempio illustrativo l'implementazione della procedura **ReadMatrixInfo**:
+To close the loop, we need to understand how the *unit* communicates with its corresponding dynamic library. To do so, let's take the implementation of the **ReadMatrixInfo** procedure as an illustrative example:
 
 ```pascal
 implementation
 
 const
-  LibGUID='{2970D979-84FB-4B42-B730-F596BEC20E2F}';
+LibGUID='{2970D979-84FB-4B42-B730-F596BEC20E2F}';
 
 procedure ReadMatrixInfo(const MatrixHandle: integer; var NumRows, NumCols: integer);
 var
-  Args: TVariantArray;
+Args: TVariantArray;
 begin
-  Args.Push(MatrixHandle);
-  Args.Push(0);
-  Args.Push(0);
-  __LibInterface_InvokeLibProc(LibGUID, 0, 'ReadMatrixInfo', Args);
-  NumRows:=Args[1];
-  NumCols:=Args[2];
+Args.Push(MatrixHandle);
+Args.Push(0);
+Args.Push(0);
+__LibInterface_InvokeLibProc(LibGUID, 0, 'ReadMatrixInfo', Args);
+NumRows:=Args[1];
+NumCols:=Args[2];
 end;
 ```
 
-Come possiamo osservare, il dialogo con una libreria dinamica avviene tramite l'utiizzo della funzione **__LibInterface_InvokeLibProc**; i parametri da passare a questa procedura sono:
-- Il GUID univoco della procedura alla quale si vuole inviare il comando.
-- L'istanza dell'oggetto a cui la procedura da invocare appartiene; si può passare 0 se si invoca una procedura/funzione e non un metodo.
-- La lista dei parametri di ingresso e/o di uscita.
+As we can see, communication with a dynamic library occurs through the **__LibInterface_InvokeLibProc** function; the parameters to pass to this procedure are:
+- The unique GUID of the procedure to which you want to send the command.
+- The instance of the object to which the procedure to be invoked belongs; you can pass 0 if you are invoking a procedure/function and not a method.
+- The list of input and/or output parameters.
 
-La **__LibInterface_InvokeLibProc** restituisce anche il valore di ritorno nel caso la il nome invocato sia quello di una funzione.
+**__LibInterface_InvokeLibProc** also returns the return value if the invoked name is that of a function.
 
-## Esecuzione di un notebook su macchine remote
+## Running a notebook on remote machines
 
-Come abbiamo visto, le celle dei nostri notebook vengono eseguite dal processo OPNB che viene lanciato in esecuzione sulla nostra macchina locale.
+As we've seen, our notebook cells are executed by the OPNB process, which is launched on our local machine.
 
-Ci potrebbero però essere dei casi nei quali l'esecuzione di un notebook sia meglio che avvenga non nella nostra macchina, ma in un'altra più performante, o con delle risorse necessarie che la nostra macchina locale non possiede. Per far capire meglio una possibile esigenza, si pensi ad un notebook che utilizzi delle librerie di reti neurali, le quali necessitino di una GPU avanzata. In uno scenario come questo, noi vorremmo modificare localmente il nostro notebook, ma demandare la sua esecuzione nella macchina remota che possiede le capacità hardware necessarie.
+However, there may be cases in which it's better to run a notebook not on our machine, but on a more powerful one, or one with resources that our local machine doesn't have. To better understand a possible need, imagine a notebook that uses neural network libraries, which require an advanced GPU. In a scenario like this, we'd like to modify our notebook locally, but delegate its execution to the remote machine that has the necessary hardware capabilities.
 
-Questo è possibile utilizzando, all'inizio del nostro notebook, l'istruzione **SetRemoteOPNBHost**:
+This is possible by using the **SetRemoteOPNBHost** instruction at the beginning of our notebook:
 
-![SetRemoteOPNBHost](media\nb-remote-host-1.png)
+![SetRemoteOPNBHost](https://github.com/ElCondor1969/ObjectPascalNotebook/media/nb-remote-host-1.png)
 
-L'istruzione deve essere l'unica istruzione della cella e, dopo la sua esecuzione, tutte le esecuzioni delle celle del notebook saranno reindirizzate verso l'host specificato.
-Ovviamente, nella macchina remota deve trovarsi già in esecuzione una istanza del processo OPNB, altrimenti le richieste di esecuzione cadrebbero nel vuoto.
+The instruction must be the only instruction in the cell, and after its execution, all executions of the notebook's cells will be redirected to the specified host.
+Obviously, an instance of the OPNB process must already be running on the remote machine, otherwise execution requests will be ignored.
 
-### Considerazioni sulla sicurezza
+### Security Considerations
 
-Ovviamente, per motivi di sicurezza, l'host OPNB della macchina remota dovrebbe essere lanciato in esecuzione in modo che abiliti il protocollo HTTPS; per far ciò, l'applicazione dovrebbe essere lanciato in esecuzione specificando i parametri seguenti:
+Obviously, for security reasons, the OPNB host on the remote machine should be running so that it enables the HTTPS protocol. To do this, the application should be run with the following parameters specified:
 
-- **UseSSL**: Flag booleano che abilita il protocollo HTTPS.
-- **CertFile**: Nome del file del certificato.
-- **CertKey**: Nome del file delle chiavi del certificato.
-- **CertPassword**: Password del certificato.
+- **UseSSL**: Boolean flag that enables the HTTPS protocol.
+- **CertFile**: Name of the certificate file.
+- **CertKey**: Name of the certificate key file.
+- **CertPassword**: Certificate password.
 
-Ad esempio:
+For example:
 
 ```dos
 OPNBHost -port "9001" -UseSSL true -CertFile "MyCert.cert.pem" -CertKey "MyCert.key.pem" -CertPassword "APassword"
 ```
 
-Ad ogni modo, abilitare il protocollo HTTPS non basta, da solo, a garantire la sicurezza, perché attualmente il processo OPNB non implementa nessun controllo sugli accessi e chiunque, che conoscesse l'URL di ascolto del processo, potrebbe inviare le proprie richieste di esecuzione.
-Questo aspetto deve essere tenuto bene in mente nel caso si volesse attivare un processo OPNB destinato ad accogliere richieste remote.
+However, enabling HTTPS alone isn't enough to guarantee security, because the OPNB process currently doesn't implement any access controls, and anyone who knows the process's listening URL could send execution requests.
+This should be kept in mind if you want to activate an OPNB process intended to accept remote requests.
 
-## Compilazione di OPNB
+## Compiling OPNB
 
-Come abbiamo già detto, L'applicazione OPNB è stato scritta in Delphi FMX e deve essere compilato tramite questo linguaggio.
-Inoltre, come visto sopra, viene utilizzato [**DWScript**](https://github.com/EricGrange/DWScript) come linguaggio per i nostri notebook. Pertanto, per compilare l'estensione, abbiamo bisogno dei relativi sorgenti.
+As we've already mentioned, the OPNB application was written in Delphi FMX and must be compiled using this language.
+Furthermore, as seen above, [**DWScript**](https://github.com/EricGrange/DWScript) is used as the language for our notebooks. Therefore, to compile the extension, we need the relevant sources.
 
-Il repository contiene all'interno della cartella *vendor\DWScript*, un submodule GIT che punta al repository di DWScript. Basterà quindi eseguire il checkout di questo submodule per avere tutti i sorgenti a disposizione per la compilazione del programma.
+The repository contains a GIT submodule within the *vendor\DWScript* folder that points to the DWScript repository. Simply checkout this submodule to have all the sources available for compiling the program.
 
-## Aiuto cercasi!
+## Help needed!
 
-Delphi FMX permette di generare eseguibili anche per altri sistemi operativi, come Linux e macOS. Purtroppo non sono in grado generare eseguibili per questi sistemi operativi e proprio per questo chiedo a chiunque abbia il piacere di collaborare, e sia in grado di compilare anche per questi sistemi operativi, di farsi avanti e dare la possibilità a questa estensione di essere utilizzata anche al di fuori di Windows.
+Delphi FMX also allows you to generate executables for other operating systems, such as Linux and macOS. Unfortunately, I'm unable to generate executables for these operating systems, so I'm asking anyone willing to contribute, and who is also able to compile for these operating systems, to step forward and make this extension available for use outside of Windows.
 
-Grazie!
+Thank you!
