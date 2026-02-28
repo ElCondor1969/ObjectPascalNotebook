@@ -95,22 +95,22 @@ A dynamic library must expose the following two procedures:
 ```pascal
 procedure LibInit(const ALibInterface: PLibInterface); cdecl;
 begin
-with ALibInterface^ do
-begin
-LibGUID:='{2970D979-84FB-4B42-B730-F596BEC20E2F}';
-InvokeLibProc:=InvokeLibProcImpl;
-end;
-// Follow the initialization code
+  with ALibInterface^ do
+    begin
+      LibGUID:='{2970D979-84FB-4B42-B730-F596BEC20E2F}';
+      InvokeLibProc:=InvokeLibProcImpl;
+    end;
+  // Follow the initialization code
 end;
 
 procedure LibFree(const ALibInterface: PLibInterface); cdecl;
 begin
-// Follow the resources release code
+  // Follow the resources release code
 end;
 
 exports
-LibInit,
-LibFree;
+  LibInit,
+  LibFree;
 ```
 
 Without the **LibInit** and **LibFree** procedures, the OPNB process will never load our library.
@@ -119,18 +119,18 @@ The project will have to use the **uLibInterface** unit which will declare all t
 
 ```pascal
 type 
-TInvokeLibProc = function(Context, Instance: NativeInt; const ProcName: PChar; var Args:array of variant): Variant; cdecl; 
+  TInvokeLibProc = function(Context, Instance: NativeInt; const ProcName: PChar; var Args:array of variant): Variant; cdecl; 
 
-PLibInterface = ^TLibInterface; 
-TLibInterface = record 
-Version: Integer; 
-Context: NativeInt; 
-Namespace: PChar; 
-ExecutionPath: PChar; 
-LibHandle: TDynLibHandle; 
-LibGUID: PChar; 
-InvokeLibProc: TInvokeLibProc; 
-end;
+  PLibInterface = ^TLibInterface; 
+  TLibInterface = record 
+    Version: Integer; 
+    Context: NativeInt; 
+    Namespace: PChar; 
+    ExecutionPath: PChar; 
+    LibHandle: TDynLibHandle; 
+    LibGUID: PChar; 
+    InvokeLibProc: TInvokeLibProc; 
+  end;
 ```
 
 The **LibInit** procedure receives a pointer to the **TLibInterface** record; There are two fields in this record that must be filled in for the OPNB process to acquire them:
@@ -163,23 +163,22 @@ The library provides the following features:
 
 #### The MemoryMatrices Dynamic Library Project
 
-This Delphi FMX project implements our sample dynamic library. To ensure it is a compliant library, it
-will define the two procedures **LibInit** and **LibFree** as follows:
+This Delphi FMX project implements our sample dynamic library. To ensure it is a compliant library, it will define the two procedures **LibInit** and **LibFree** as follows:
 
 ```pascal
 procedure LibInit(const ALibInterface: PLibInterface); cdecl;
 begin
-with ALibInterface^ do
-begin
-LibGUID:='{2970D979-84FB-4B42-B730-F596BEC20E2F}';
-InvokeLibProc:=InvokeLibProcImpl;
-end;
-MatrixDict:=TDictionary<integer, TMatrixEntry>.Create;
+  with ALibInterface^ do
+    begin
+      LibGUID:='{2970D979-84FB-4B42-B730-F596BEC20E2F}';
+      InvokeLibProc:=InvokeLibProcImpl;
+    end;
+  MatrixDict:=TDictionary<integer, TMatrixEntry>.Create;
 end;
 
 procedure LibFree(const ALibInterface: PLibInterface); cdecl;
 begin
-FreeMatrixDict;
+  FreeMatrixDict;
 end;
 ```
 
@@ -188,32 +187,32 @@ It is not the purpose of this chapter to explain how the library manages the mat
 ```pascal
 function InvokeLibProcImpl(Context, Instance: NativeInt; const ProcName: PChar; var Args:array of variant): Variant; cdecl;
 begin 
-if (SameText(ProcName,'InstantiateMatrix')) then 
-Result:=InstantiateMatrix(Args[0], Args[1], Args[2], Args[3]) 
-else if (SameText(ProcName,'FreeMatrix')) then 
-FreeMatrix(Args[0]) 
-else if (SameText(ProcName,'ReadMatrixInfo')) then 
-ReadMatrixInfo(Args[0], Args[1], Args[2]) 
-else if (SameText(ProcName,'ReadMatrix')) then 
-Result:=ReadMatrix(Args[0], Args[1], Args[2]) 
-else if (SameText(ProcName,'WriteMatrix')) then 
-WriteMatrix(Args[0],Args[1]) 
-else if (SameText(ProcName,'RandomizeMatrix')) then 
-RandomizeMatrix(Args[0],Args[1]) 
-else if (SameText(ProcName,'MulMatrices')) then 
-Result:=MulMatrices(Args[0],Args[1]) 
-else if (SameText(ProcName,'TransposeMatrix')) then 
-Result:=TransposeMatrix(Args[0]) 
-else if (SameText(ProcName,'AddMatrices')) then 
-Result:=AddMatrices(Args[0],Args[1]) 
-else if (SameText(ProcName,'SubMatrices')) then 
-Result:=SubMatrices(Args[0],Args[1]) 
-else if (SameText(ProcName,'HadamardMatrices')) then 
-Result:=HadamardMatrices(Args[0],Args[1]) 
-else if (SameText(ProcName,'ScaleMatrix')) then
-Result:=ScaleMatrix(Args[0],Args[1])
-else
-RaiseException('Proc "%s" unknown',[ProcName]);
+  if (SameText(ProcName,'InstantiateMatrix')) then 
+    Result:=InstantiateMatrix(Args[0], Args[1], Args[2], Args[3]) 
+  else if (SameText(ProcName,'FreeMatrix')) then 
+    FreeMatrix(Args[0]) 
+  else if (SameText(ProcName,'ReadMatrixInfo')) then 
+    ReadMatrixInfo(Args[0], Args[1], Args[2]) 
+  else if (SameText(ProcName,'ReadMatrix')) then 
+    Result:=ReadMatrix(Args[0], Args[1], Args[2]) 
+  else if (SameText(ProcName,'WriteMatrix')) then 
+    WriteMatrix(Args[0],Args[1]) 
+  else if (SameText(ProcName,'RandomizeMatrix')) then 
+    RandomizeMatrix(Args[0],Args[1]) 
+  else if (SameText(ProcName,'MulMatrices')) then 
+    Result:=MulMatrices(Args[0],Args[1]) 
+  else if (SameText(ProcName,'TransposeMatrix')) then 
+    Result:=TransposeMatrix(Args[0]) 
+  else if (SameText(ProcName,'AddMatrices')) then 
+    Result:=AddMatrices(Args[0],Args[1]) 
+  else if (SameText(ProcName,'SubMatrices')) then 
+    Result:=SubMatrices(Args[0],Args[1]) 
+  else if (SameText(ProcName,'HadamardMatrices')) then 
+    Result:=HadamardMatrices(Args[0],Args[1]) 
+  else if (SameText(ProcName,'ScaleMatrix')) then
+    Result:=ScaleMatrix(Args[0],Args[1])
+  else
+    RaiseException('Proc "%s" unknown',[ProcName]);
 end;
 ```
 
@@ -256,14 +255,14 @@ LibGUID='{2970D979-84FB-4B42-B730-F596BEC20E2F}';
 
 procedure ReadMatrixInfo(const MatrixHandle: integer; var NumRows, NumCols: integer);
 var
-Args: TVariantArray;
+  Args: TVariantArray;
 begin
-Args.Push(MatrixHandle);
-Args.Push(0);
-Args.Push(0);
-__LibInterface_InvokeLibProc(LibGUID, 0, 'ReadMatrixInfo', Args);
-NumRows:=Args[1];
-NumCols:=Args[2];
+  Args.Push(MatrixHandle);
+  Args.Push(0);
+  Args.Push(0);
+  __LibInterface_InvokeLibProc(LibGUID, 0, 'ReadMatrixInfo', Args);
+  NumRows:=Args[1];
+  NumCols:=Args[2];
 end;
 ```
 

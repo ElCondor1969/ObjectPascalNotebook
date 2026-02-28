@@ -1,12 +1,13 @@
 {
   "name": "object-pascal-notebook",
-  "displayName": "Object Pascal Notebook Support",
+  "displayName": "Object Pascal Notebook",
   "description": "Adds Object Pascal language support to VSCode Notebooks.",
+  "icon": "media/OPNB-128.png",
   "repository": {
     "type": "git",
     "url": "https://github.com/ElCondor1969/ObjectPascalNotebook.git"
   },
-  "version": "0.0.1",
+  "version": "0.0.2",
   "publisher": "sergiorossi",
   "author": {
     "name": "Sergio Rossi",
