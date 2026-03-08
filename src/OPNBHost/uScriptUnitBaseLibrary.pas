@@ -282,7 +282,7 @@ begin
 end;
 
 procedure TScriptUnitBaseLibrary.dwsUnitLibraryFunctionsRaiseException_String_Eval(
-  info: TProgramInfo);
+  Info: TProgramInfo);
 begin
   RaiseException(Info.ValueAsString['AMessage']);
 end;

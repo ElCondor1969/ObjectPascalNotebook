@@ -139,21 +139,6 @@ begin
   FFlagPreserveStack:=true;
 end;
 
-(*
-procedure TOPNBProgramExecution.EndProgram;
-var
-  TempStack:TStackMixIn;
-begin
-  TempStack.Assign(FStack);
-  try
-    inherited;
-    FStack.Assign(TempStack);
-  finally
-    TempStack.Finalize;
-  end;
-end;
-*)
-
 { TScriptExecuter.TUnitSearch }
 
 constructor TScriptExecuter.TUnitSearch.Create(AScriptExecuter: TScriptExecuter);

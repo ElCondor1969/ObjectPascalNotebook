@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.0.3
+- Bug fixing.
+
 ## 0.0.2
 - Added icon.
 

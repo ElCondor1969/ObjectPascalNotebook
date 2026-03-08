@@ -800,5 +800,4 @@ begin
   FDataPtrPool:=Source.FDataPtrPool;
 end;
 
-
 end.

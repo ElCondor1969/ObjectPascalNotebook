@@ -7049,11 +7049,28 @@ end;
 // added
 procedure TSimpleIntegerStack.Assign(ASimpleIntegerStack: TSimpleIntegerStack);
 var
-  k:integer;
+  k, Dim, Idx: integer;
+  p: PSimpleIntegerStackChunk;
+  Buffer: array of integer;
 begin
+  SetLength(Buffer,0);
+  Idx:=0;
   Clear;
-  for k:=0 to ASimpleIntegerStack.FCount-1 do
-    Push(ASimpleIntegerStack.FChunk.Data[k]);
+  p:=ASimpleIntegerStack.FChunk;
+  Dim:=ASimpleIntegerStack.FChunkIndex+1;
+  while p<>nil do
+    begin
+      SetLength(Buffer,Length(Buffer)+Dim);
+      for k:=Dim-1 downto 0 do
+        begin
+          Buffer[Idx]:=p.Data[k];
+          Inc(Idx);
+        end;
+      p:=p.Prev;
+      Dim:=TSimpleIntegerStackChunk.ChunkSize;
+    end;
+  for k:=Length(Buffer)-1 downto 0 do
+    Push(Buffer[k]);
 end;
 
 // added

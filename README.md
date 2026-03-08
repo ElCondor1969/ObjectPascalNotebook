@@ -311,7 +311,7 @@ Furthermore, as seen above, [**DWScript**](https://github.com/EricGrange/DWScrip
 
 The repository contains a GIT submodule within the *vendor\DWScript* folder that points to the DWScript repository. Simply checkout this submodule to have all the sources available for compiling the program.
 
-## Help needed!
+## Help wanted!
 
 Delphi FMX also allows you to generate executables for other operating systems, such as Linux and macOS. Unfortunately, I'm unable to generate executables for these operating systems, so I'm asking anyone willing to contribute, and who is also able to compile for these operating systems, to step forward and make this extension available for use outside of Windows.
 
