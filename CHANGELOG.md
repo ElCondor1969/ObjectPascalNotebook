@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.0.4
+- Message management.
+
 ## 0.0.3
 - Bug fixing.
 

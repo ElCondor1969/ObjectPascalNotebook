@@ -1,0 +1,79 @@
+{
+  "cells": [
+    {
+      "kind": "markdown",
+      "value": "This notebook demonstrates an example of message exchange between a library and our scripts.\r\nThe chosen example is a simulation of a thermometer capable of sending periodic temperature messages. \r\nThe library will allow us to intercept these messages and make the related data available to our scripts.\r\n\r\n**Note**: To use the library you must first compile it.",
+      "language": "markdown"
+    },
+    {
+      "kind": "code",
+      "value": "Restart; // Execute for release all resources and restart the execution of the notebook.",
+      "language": "objectpascal",
+      "outputs": [
+        {
+          "value": "OK"
+        }
+      ]
+    },
+    {
+      "kind": "markdown",
+      "value": "The **MessagePostDemo** library is the sample library that was written just as an example to illustrate how to take advantage of sending messages from a library and receiving messages from external listeners.\r\nPlease refer to the comments within the repository sources for this library for an explanation of all the necessary steps.",
+      "language": "markdown"
+    },
+    {
+      "kind": "code",
+      "value": "Import('MessageDemo','..\\MessagePostDemo\\Lib');",
+      "language": "objectpascal",
+      "outputs": [
+        {
+          "value": "OK"
+        }
+      ]
+    },
+    {
+      "kind": "markdown",
+      "value": "Let's define the **TemperatureEvent** procedure that will handle the messages arriving from the library to display the temperature detected by our virtual thermometer.",
+      "language": "markdown"
+    },
+    {
+      "kind": "code",
+      "value": "procedure TemperatureEvent(Sender: TObject; const Temperature: float);\r\nbegin\r\n  TConsole.WriteBlock(\r\n    Format('Temperature: <b>%s &deg;C</b><br>',[FloatToStr(Round(Temperature*100)/100)]),\r\n    'blk1'\r\n  );\r\nend;",
+      "language": "objectpascal",
+      "outputs": [
+        {
+          "value": "OK"
+        }
+      ]
+    },
+    {
+      "kind": "markdown",
+      "value": "We instantiate an object of the **TSmartMeter** class provided by the library which will allow us, through its **OnTemperature2** event, to intercept messages coming from the library.",
+      "language": "markdown"
+    },
+    {
+      "kind": "code",
+      "value": "var SmartMeter:=new TSmartMeter;\r\nSmartMeter.OnTemperature2:=TemperatureEvent;",
+      "language": "objectpascal",
+      "outputs": [
+        {
+          "value": "OK"
+        }
+      ]
+    },
+    {
+      "kind": "markdown",
+      "value": "The **TSmartMeter** class provides the **Start** and **Stop** methods to begin and end temperature readings, respectively. The **ListenFor** method allows us to listen for temperature reading messages for a specified time in seconds.",
+      "language": "markdown"
+    },
+    {
+      "kind": "code",
+      "value": "SmartMeter.Start;\r\ntry\r\n  SmartMeter.ListenFor(20);\r\nfinally\r\n  SmartMeter.Stop;\r\nend;\r\nWriteLn('Temperature detection completed');",
+      "language": "objectpascal",
+      "outputs": [
+        {
+          "value": "<!-- _console_output_start_blk1_ -->Temperature: <b>26,27 &deg;C</b><br><!-- _console_output_end_blk1_ -->Temperature detection completed<br>"
+        }
+      ]
+    }
+  ]
+}

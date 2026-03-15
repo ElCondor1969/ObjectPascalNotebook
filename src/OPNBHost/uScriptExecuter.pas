@@ -45,6 +45,12 @@ type
         procedure AddUnit(const ANamespace,AUnitName,AUnitSource:string);
         function GetUnitCode(const UnitName:string;Shrink:boolean=false):string;
       end;
+  public
+    type
+      TPostedMessage=record
+        Key: variant;
+        Parameters: array of variant;
+      end;
   private
     { Private declarations }
     FExecutionPath:string;
@@ -53,8 +59,11 @@ type
     FUnitSearch:TUnitSearch;
     FProgram:IdwsProgram;
     FExecution:IdwsProgramExecution;
+    FPostingMessageEnabled:boolean;
     FDestroying:boolean;
     FOutputData:TJSONObject;
+    FPostedMessages:TThreadedQueue<TPostedMessage>;
+    FMessageCallbacksDictionary:TDictionary<variant,variant>;
     procedure InjectUnit(var Script:string);
     function GetMustRestartFlag:boolean;
     procedure SetMustRestartFlag(const Value:boolean);
@@ -82,11 +91,16 @@ type
     procedure Import(const ANamespace,AValue:string);
     procedure AddUnit(const ANamespace,AUnitName,AUnitText:string);
     function GetLibInterface(const LibGUID:string):TLibInterface;
+    procedure AddMessageCallback(const Key,MessageCallback:variant);
+    procedure PushPostMessage(const PostedMessage:TPostedMessage);
+    function PopPostMessage(out PostedMessage:TPostedMessage):boolean;
+    function GetMessageCallback(const Key:variant;out MessageCallback:variant):boolean;
     property ExecutionPath:string read FExecutionPath write FExecutionPath;
     property VariablesDictionary:TDictionary<string,variant> read FVariablesDictionary;
     property MustRestartFlag:boolean read GetMustRestartFlag write SetMustRestartFlag;
     property CancelPending:boolean read GetCancelPending write SetCancelPending;
     property OutputData:TJSONObject read FOutputData;
+    property PostingMessageEnabled:boolean read FPostingMessageEnabled write FPostingMessageEnabled;
   end;
 
 implementation
@@ -109,6 +123,20 @@ type
     function BeginProgram:boolean;override;
     procedure EndProgram;override;
   end;
+
+{ InternalPostMessage }
+
+procedure InternalPostMessage(Context: NativeInt; const Key: variant; const Parameters:array of variant); cdecl;
+var k:integer;
+    PostedMessage:TScriptExecuter.TPostedMessage;
+begin
+  PostedMessage:=Default(TScriptExecuter.TPostedMessage);
+  PostedMessage.Key:=Key;
+  SetLength(PostedMessage.Parameters,Length(Parameters));
+  for k:=0 to High(Parameters) do
+    PostedMessage.Parameters[k]:=Parameters[k];
+  TScriptExecuter(Context).PushPostMessage(PostedMessage);
+end;
 
 { TOPNBProgramExecution }
 
@@ -212,7 +240,7 @@ end;
 procedure TScriptExecuter.TUnitSearch.ImportFromPath(const ANamespace,APath:string);
 const
   FileExtensions:array[0..3] of string=('.pas', '.dll', '.dylib', '.so');
-var 
+var
   Element, UnitName, UnitText, UnitTextCopy: string;
   FileList: TArray<string>;
   Match: TMatch;
@@ -286,6 +314,7 @@ begin
         Namespace:=PChar(ANamespace);
         ExecutionPath:=PChar(ExtractFilePath(ALibraryName));
         LibHandle:=Value;
+        PostMessage:=InternalPostMessage;
       end;
     LibInit(@LibInterface);
     if (LibInterface.LibGUID='') then
@@ -323,6 +352,8 @@ var Linq:TdwsLinqFactory;
 begin
   inherited;
   FVariablesDictionary:=TDictionary<string,variant>.Create;
+  FMessageCallbacksDictionary:=TDictionary<variant,variant>.Create;
+  FPostedMessages:=TThreadedQueue<TPostedMessage>.Create(16384,60*1000,60*1000);
   FLibraryUnitAdded:=TStringList.Create;
   FUnitSearch:=TUnitSearch.Create(Self);
   TdwsDatabaseLib.Create(Self).Script:=DelphiWebScript;
@@ -331,6 +362,7 @@ begin
   dwsLinqSql.TLinqSqlExtension.Create(DelphiWebScript).LinqFactory:=Linq;
   TScriptUnitBaseLibrary.Create(Self);
   FOutputData:=TJSONObject.Create;
+  FPostingMessageEnabled:=true;
 end;
 
 procedure TScriptExecuter.BeforeDestruction;
@@ -338,6 +370,8 @@ begin
   FDestroying:=true;
   ExecuteScript(''); // Release all resources;
   inherited;
+  FPostedMessages.Free;
+  FMessageCallbacksDictionary.Free;
   FVariablesDictionary.Free;
   FLibraryUnitAdded.Free;
   FUnitSearch.Free;
@@ -490,7 +524,7 @@ begin
             for UnitAdded in FLibraryUnitAdded do
               Script:=Script+UnitAdded+',';
             Delete(Script,Length(Script),1);
-            Script:=Script+';'+sLineBreak+Script;
+            Script:=Script+';'+sLineBreak;
 
             // Compile again for import the new unit.
             FProgram.Msgs.Clear;
@@ -522,13 +556,18 @@ begin
                   end;
 
             // Initialize all symbols that have not been initialized.
-            FProgram.UnitMains.Initialize(FProgram.ProgramObject.CompileMsgs);
             for k:=0 to FProgram.Table.Count-1 do
               begin
                 Symbol:=FProgram.Table[k];
                 if (SymbolList.IndexOf(Symbol)=-1) then
                   if (Symbol is TUnitSymbol) and (FLibraryUnitAdded.IndexOf(Symbol.Name)<>-1) then
-                    TUnitSymbol(Symbol).Table.Initialize(FProgram.ProgramObject.CompileMsgs);
+                    begin
+                      TUnitSymbol(Symbol).Table.Initialize(FProgram.ProgramObject.CompileMsgs);
+                      if (Assigned(TUnitSymbol(Symbol).Main.InitializationExpr)) then
+                        TUnitSymbol(Symbol).Main.InitializationExpr.EvalNoResult(FExecution.GetExecutionObject);
+                      if (Assigned(TUnitSymbol(Symbol).Main.FinalizationExpr)) then
+                        FProgram.ProgramObject.AddFinalExpr(TUnitSymbol(Symbol).Main.FinalizationExpr  as TBlockExprBase);
+                    end;
               end;
 
             // Execute the compilated stataments.
@@ -559,6 +598,22 @@ begin
   Insert(' uses '+GetUnitList+'; ',Script,Position);
 end;
 
+function TScriptExecuter.PopPostMessage(out PostedMessage:TPostedMessage):boolean;
+begin
+  with FPostedMessages do
+    begin
+      Result:=(QueueSize>0);
+      if (Result) then
+        PostedMessage:=PopItem;
+    end;
+end;
+
+procedure TScriptExecuter.PushPostMessage(const PostedMessage:TPostedMessage);
+begin
+  if (FPostingMessageEnabled) then
+    FPostedMessages.PushItem(PostedMessage);
+end;
+
 function TScriptExecuter.GetMustRestartFlag:boolean;
 var Value:variant;
 begin
@@ -570,6 +625,11 @@ end;
 procedure TScriptExecuter.SetMustRestartFlag(const Value:boolean);
 begin
   FVariablesDictionary.AddOrSetValue(varFlagRestart,Value);
+end;
+
+function TScriptExecuter.GetMessageCallback(const Key:variant;out MessageCallback:variant):boolean;
+begin
+  Result:=FMessageCallbacksDictionary.TryGetValue(Key,MessageCallback);
 end;
 
 function TScriptExecuter.GetCancelPending:boolean;
@@ -675,8 +735,13 @@ begin
   if (CancelPending) then
     begin
       FVariablesDictionary.AddOrSetValue(varConsoleOutout,'Aborted');
-      Abort; 
+      Abort;
     end;
+end;
+
+procedure TScriptExecuter.AddMessageCallback(const Key,MessageCallback:variant);
+begin
+  FMessageCallbacksDictionary.AddOrSetValue(Key,MessageCallback);
 end;
 
 procedure TScriptExecuter.AddConsoleOutputRow(const AMessage:string; BreakLine:boolean);

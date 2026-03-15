@@ -119,7 +119,9 @@ The project will have to use the **uLibInterface** unit which will declare all t
 
 ```pascal
 type 
-  TInvokeLibProc = function(Context, Instance: NativeInt; const ProcName: PChar; var Args:array of variant): Variant; cdecl; 
+  TInvokeLibProc = function(Context, Instance: NativeInt; const ProcName: PChar; var Args:array of variant): Variant; cdecl;
+  TPostMessage = procedure(Context: NativeInt; const Key: variant; const Parameters: array of variant); cdecl;
+  PPostMessge = ^TPostMessage;
 
   PLibInterface = ^TLibInterface; 
   TLibInterface = record 
@@ -129,7 +131,8 @@ type
     ExecutionPath: PChar; 
     LibHandle: TDynLibHandle; 
     LibGUID: PChar; 
-    InvokeLibProc: TInvokeLibProc; 
+    InvokeLibProc: TInvokeLibProc;
+    PostMessage: TPostMessage;
   end;
 ```
 
@@ -272,6 +275,13 @@ As we can see, communication with a dynamic library occurs through the **__LibIn
 - The list of input and/or output parameters.
 
 **__LibInterface_InvokeLibProc** also returns the return value if the invoked name is that of a function.
+
+### Sending messages from the library to the outside
+
+In the previous chapter, we saw how a library uses the **InvokeLibProc** procedure to process commands arriving from outside. In this case, the library is passive, meaning it acts only upon the initiative of an external caller.
+However, there may be cases where the library itself wants to initiate a data/information exchange with the outside world.
+This can be done by sending messages by invoking the **PostMessage** procedure provided by the **TLibInterface** record.
+For an explanation of this mechanism, see the [Messages posting demo](Examples/Notebooks/Messages%20posting%20demo.opnb) example notebook.
 
 ## Running a notebook on remote machines
 

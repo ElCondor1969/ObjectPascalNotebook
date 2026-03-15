@@ -509,6 +509,67 @@ object ScriptUnitBaseLibrary: TScriptUnitBaseLibrary
             IsWritable = False
           end>
         OnEval = dwsUnitLibraryFunctionsSetRemoteOPNBHostEval
+      end
+      item
+        Name = 'RegisterMessageCallback'
+        Parameters = <
+          item
+            Name = 'Key'
+            DataType = 'Variant'
+            IsVarParam = True
+            IsWritable = False
+          end
+          item
+            Name = 'MessageCallback'
+            DataType = 'TMessageCallback'
+            IsVarParam = True
+            IsWritable = False
+          end>
+        OnEval = dwsUnitLibraryFunctionsRegisterMessageCallbackEval
+      end
+      item
+        Name = 'ProcessMessage'
+        Parameters = <
+          item
+            Name = 'Key'
+            DataType = 'Variant'
+            IsVarParam = True
+            IsWritable = False
+          end
+          item
+            Name = 'Parameters'
+            DataType = 'TVariantArray'
+            IsVarParam = True
+            IsWritable = False
+          end>
+        OnEval = dwsUnitLibraryFunctionsProcessMessageEval
+      end
+      item
+        Name = 'ProcessPostedMessage'
+        ResultType = 'Boolean'
+        OnEval = dwsUnitLibraryFunctionsProcessPostedMessageEval
+      end
+      item
+        Name = 'EnablePostingMessage'
+        Parameters = <
+          item
+            Name = 'Enable'
+            DataType = 'Boolean'
+            IsVarParam = True
+            IsWritable = False
+          end>
+        OnEval = dwsUnitLibraryFunctionsEnablePostingMessageEval
+      end>
+    Delegates = <
+      item
+        Name = 'TMessageCallback'
+        Parameters = <
+          item
+            Name = 'Parameters'
+            DataType = 'TVariantArray'
+            IsVarParam = True
+            IsWritable = False
+          end>
       end>
     UnitName = 'uBaseLibrary'
     StaticSymbols = False

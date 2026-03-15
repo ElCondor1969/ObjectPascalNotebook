@@ -5,7 +5,7 @@ interface
 uses
   System.SysUtils, System.Classes, Variants, Generics.Collections, Types, JSON,
   dwsComp, dwsExprs, dwsExprList, dwsCompiler, dwsFunctions, dwsSymbols, dwsDataContext,
-  dwsInfo, uScriptExecuter, uUtility;
+  dwsInfo, dwsDynamicArrays, uScriptExecuter, uUtility;
 
 type
   TScriptUnitBaseLibrary = class(TDataModule)
@@ -41,6 +41,13 @@ type
     procedure dwsUnitLibraryFunctions__ArrayVariantArrayToVariantArrayEval(
       info: TProgramInfo);
     procedure dwsUnitLibraryFunctionsSetRemoteOPNBHostEval(info: TProgramInfo);
+    procedure dwsUnitLibraryFunctionsRegisterMessageCallbackEval(
+      info: TProgramInfo);
+    procedure dwsUnitLibraryFunctionsProcessMessageEval(info: TProgramInfo);
+    procedure dwsUnitLibraryFunctionsProcessPostedMessageEval(
+      info: TProgramInfo);
+    procedure dwsUnitLibraryFunctionsEnablePostingMessageEval(
+      info: TProgramInfo);
   private
     { Private declarations }
     FScriptExecuter:TScriptExecuter;
@@ -65,7 +72,7 @@ implementation
 {$R *.dfm}
 
 uses
-  uDWSScripter, uLibInterface;
+  uLibInterface;
 
 type
   _TDataContext=class(TDataContext);
@@ -146,7 +153,7 @@ begin
 end;
 
 procedure TScriptUnitBaseLibrary.dwsLibreryUnitFunctionsRestartEval(
-  info: TProgramInfo);
+  Info: TProgramInfo);
 begin
   FScriptExecuter.MustRestartFlag:=true;
 end;
@@ -287,6 +294,17 @@ begin
   RaiseException(Info.ValueAsString['AMessage']);
 end;
 
+procedure TScriptUnitBaseLibrary.dwsUnitLibraryFunctionsRegisterMessageCallbackEval(
+  Info: TProgramInfo);
+var MessageCallback:variant;
+begin
+  MessageCallback:=Info.Vars['MessageCallback'];
+  FScriptExecuter.AddMessageCallback(
+    Info.ValueAsVariant['Key'],
+    MessageCallback
+  );
+end;
+
 procedure TScriptUnitBaseLibrary.dwsUnitLibraryFunctionsSetRemoteOPNBHostEval(
   Info: TProgramInfo);
 begin
@@ -329,10 +347,60 @@ begin
     Info.ResultAsString:=Value;
 end;
 
+procedure TScriptUnitBaseLibrary.dwsUnitLibraryFunctionsEnablePostingMessageEval(
+  Info: TProgramInfo);
+begin
+  FScriptExecuter.PostingMessageEnabled:=Info.ValueAsBoolean['Enable'];
+end;
+
 procedure TScriptUnitBaseLibrary.dwsUnitLibraryFunctionsImport_stringstring_Eval(
   Info: TProgramInfo);
 begin
   FScriptExecuter.Import(Info.ValueAsString['Namespace'],Info.ValueAsString['APath']);
+end;
+
+procedure TScriptUnitBaseLibrary.dwsUnitLibraryFunctionsProcessMessageEval(
+  Info: TProgramInfo);
+var Key,MessageCallback:variant;
+    CallbackInfo:IInfo;
+begin
+  Key:=Info.ValueAsVariant['Key'];
+  if (not FScriptExecuter.GetMessageCallback(Key,MessageCallback)) then
+    RaiseException('Message callback key "%s" not found.',[VarToStr(Key)]);
+  CallbackInfo:=IInfo(IUnknown(MessageCallback));
+  CallbackInfo.Call([Info.ValueAsVariant['Parameters']]);
+end;
+
+procedure TScriptUnitBaseLibrary.dwsUnitLibraryFunctionsProcessPostedMessageEval(
+  Info: TProgramInfo);
+var k:integer;
+    Risultato:boolean;
+    MessageCallback,Parameters:variant;
+    CallbackInfo:IInfo;
+    ArrayInfo:IScriptDynArray;
+    VariantSymbol:TBaseVariantSymbol;
+    PostedMessage:TScriptExecuter.TPostedMessage;
+begin
+  Risultato:=false;
+  with FScriptExecuter do
+    while (PopPostMessage(PostedMessage)) do
+      begin
+        if (GetMessageCallback(PostedMessage.Key,MessageCallback)) then
+          try
+            VariantSymbol:=TBaseVariantSymbol.Create('Parameters');
+            CreateNewDynamicArray(VariantSymbol,ArrayInfo);
+            ArrayInfo.SetArrayLength(Length(PostedMessage.Parameters));
+            for k:=0 to High(PostedMessage.Parameters) do
+              ArrayInfo.AsVariant[k]:=PostedMessage.Parameters[k];
+            Parameters:=ArrayInfo;
+            CallbackInfo:=IInfo(IUnknown(MessageCallback));
+            CallbackInfo.Call([Parameters]);
+            Risultato:=true;
+          finally
+            VariantSymbol.Free;
+          end;
+      end;
+  Info.ResultAsBoolean:=Risultato;
 end;
 
 procedure TScriptUnitBaseLibrary.dwsUnitLibraryFunctionsRaiseException_Args_Eval(
