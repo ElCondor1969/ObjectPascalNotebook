@@ -2,7 +2,7 @@
   "cells": [
     {
       "kind": "markdown",
-      "value": "**WARNING!** Before using this notebook, you need to compile the [OpenBLASLib.dproj](https://github.com/ElCondor1969/ObjectPascalNotebook/blob/698d45c62704f6ef934f2bcc9859df598428ce2c/Examples/OpenBLASLib/OpenBLASLib.dproj) project to generate the necessary dynamic library inside the Lib folder.\r\n\r\nAfter that, you need to get the OpenBLAS dynamic library for your operating system (**\"libopenblas.dll\"** for Windows) from the OpenBLAS website and copy it into the \"Lib\" folder.",
+      "value": "**NOTICE** Before using this notebook, you need to compile the [OpenBLASLib.dproj](https://github.com/ElCondor1969/ObjectPascalNotebook/blob/698d45c62704f6ef934f2bcc9859df598428ce2c/Examples/OpenBLASLib/OpenBLASLib.dproj) project to generate the necessary dynamic library inside the Lib folder.\r\n\r\nAfter that, you need to get the OpenBLAS dynamic library for your operating system (**\"libopenblas.dll\"** for Windows) from the OpenBLAS website and copy it into the \"Lib\" folder.",
       "language": "markdown"
     },
     {
@@ -116,7 +116,7 @@
       "language": "objectpascal",
       "outputs": [
         {
-          "value": "<!-- _console_output_start_consblok61089364_ --><table style=\"border-collapse:collapse; text-align:center; border:1px solid black;\"><tr><td style=\"padding:8px; border:1px solid black;\">0</td><td style=\"padding:8px; border:1px solid black;\">1</td></tr><tr><td style=\"padding:8px; border:1px solid black;\">-2</td><td style=\"padding:8px; border:1px solid black;\">-3</td></tr></table><!-- _console_output_end_consblok61089364_ -->"
+          "value": "<opnbo_consblok78910778><table style=\"border-collapse:collapse; text-align:center; border:1px solid black;\"><tr><td style=\"padding:8px; border:1px solid black;\">0</td><td style=\"padding:8px; border:1px solid black;\">1</td></tr><tr><td style=\"padding:8px; border:1px solid black;\">-2</td><td style=\"padding:8px; border:1px solid black;\">-3</td></tr></table></opnbo_consblok78910778>"
         }
       ]
     }

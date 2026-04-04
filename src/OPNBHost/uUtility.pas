@@ -3,7 +3,10 @@ unit uUtility;
 interface
 
 uses
-  Classes, SysUtils, DateUtils, Variants, JSON;
+  FMX.Forms, Classes, SysUtils, DateUtils, Variants, JSON, Generics.Collections,
+  {$IFDEF MSWINDOWS} Winapi.ShellAPI, Winapi.Windows; {$ENDIF}
+  {$IFDEF MACOS} Macapi.Helpers, Macapi.AppKit, Posix.Stdlib; {$ENDIF}
+  {$IFDEF POSIX} Posix.Unistd, Posix.Stdlib, Posix.SysWait, Posix.Signal; {$ENDIF}
 
 type
   TStringArray=array of string;
@@ -26,17 +29,23 @@ procedure DestroyObject(var Oggetto);
 function GetFileExtension(const FileName:string):string;
 function GetFileName(const FileName:string):string;
 function MIMEFromFileExtension(Extension:string):string;
-function SeNullo(const ValoreSottoTest,ValoreSostitutivo:variant):variant;
+function Nvl(const AValue,ADefaultValue:variant):variant;
 function GenerateID(IDLength:integer=16;IDNumericFlag:boolean=false):string;
 procedure Async(AProcedure:TProc);
 procedure Sync(AProcedure:TThreadProcedure; Wait:boolean=false);
 function ParseJSONObject(AString:string):TJSONobject;
-function ReadJSONValue(AJSON:TJSONObject;const Name:string;DefaultValue:integer):integer;overload;
-function ReadJSONValue(AJSON:TJSONValue;const Name:string;DefaultValue:integer):integer;overload;
 function ReadJSONValue(AJSON:TJSONObject;const Name:string;DefaultValue:boolean):boolean;overload;
 function ReadJSONValue(AJSON:TJSONValue;const Name:string;DefaultValue:boolean):boolean;overload;
 function ReadJSONValue(AJSON:TJSONObject;const Name:string;DefaultValue:string):string;overload;
 function ReadJSONValue(AJSON:TJSONValue;const Name:string;DefaultValue:string):string;overload;
+function ReadJSONValue(AJSON:TJSONObject;const Name:string;DefaultValue:double):double;overload;
+function ReadJSONValue(AJSON:TJSONValue;const Name:string;DefaultValue:double):double;overload;
+function ReadJSONValue(AJSON:TJSONObject;const Name:string;DefaultValue:single):single;overload;
+function ReadJSONValue(AJSON:TJSONValue;const Name:string;DefaultValue:single):single;overload;
+function ReadJSONValue(AJSON:TJSONObject;const Name:string;DefaultValue:integer):integer;overload;
+function ReadJSONValue(AJSON:TJSONValue;const Name:string;DefaultValue:integer):integer;overload;
+function ReadJSONValue(AJSON:TJSONObject;const Name:string;DefaultValue:cardinal):cardinal;overload;
+function ReadJSONValue(AJSON:TJSONValue;const Name:string;DefaultValue:cardinal):cardinal;overload;
 function ReadJSONArrayCount(AJSON:TJSONObject;const Name:string):integer;overload;
 function ReadJSONArrayCount(AJSON:TJSONValue;const Name:string):integer;overload;
 function ReadJSONArray(AJSON:TJSONObject;const Name:string):TJSONArray;overload;
@@ -44,10 +53,18 @@ function ReadJSONArray(AJSON:TJSONValue;const Name:string):TJSONArray;overload;
 function WriteJSONValue(AJSON:TJSONObject;const Name:string;Value:integer):integer;overload;
 function WriteJSONValue(AJSON:TJSONObject;const Name:string;Value:boolean):boolean;overload;
 function WriteJSONValue(AJSON:TJSONObject;const Name:string;Value:string):string;overload;
+function WriteJSONValue(AJSON:TJSONObject;const Name:string;Value:double):double;overload;
+function WriteJSONValue(AJSON:TJSONObject;const Name:string;Value:variant):variant;overload;
 function WriteJSONValue(AJSON:TJSONObject;const Name:string;Value:TJSONObject):TJSONObject;overload;
 function WriteJSONValue(AJSON:TJSONObject;const Name:string;Value:TJSONArray):TJSONArray;overload;
 function AddJSONElement(AJSON:TJSONArray;Element:TJSONArray):TJSONArray;overload;
 function AddJSONElement(AJSON:TJSONArray;Element:TJSONObject):TJSONObject;overload;
+function JSONArrayFromArray(const AnArray: TArray<string>): TJSONArray; overload;
+function JSONArrayFromArray(const AnArray: TArray<integer>): TJSONArray; overload;
+function JSONArrayFromArray(const AnArray: TArray<single>): TJSONArray; overload;
+function JSONArrayFromArray(const AnArray: TArray<double>): TJSONArray; overload;
+function CreateProcess(const Command: string; const Arguments: string = ''; const ShowWindow: boolean = false): THandle;
+procedure TerminateProcess(PID: THandle);
 
 implementation
 
@@ -81,6 +98,17 @@ begin
   Result:=ReadJSONValue(AJSON as TJSONObject,Name,DefaultValue);
 end;
 
+function ReadJSONValue(AJSON:TJSONObject;const Name:string;DefaultValue:cardinal):cardinal;
+begin
+  if (not(AJSON.TryGetValue<cardinal>(Name,Result))) then
+    Result:=DefaultValue;
+end;
+
+function ReadJSONValue(AJSON:TJSONValue;const Name:string;DefaultValue:cardinal):cardinal;
+begin
+  Result:=ReadJSONValue(AJSON as TJSONObject,Name,DefaultValue);
+end;
+
 function ReadJSONValue(AJSON:TJSONObject;const Name:string;DefaultValue:boolean):boolean;
 begin
   if (not(AJSON.TryGetValue<boolean>(Name,Result))) then
@@ -99,6 +127,28 @@ begin
 end;
 
 function ReadJSONValue(AJSON:TJSONValue;const Name:string;DefaultValue:string):string;
+begin
+  Result:=ReadJSONValue(AJSON as TJSONObject,Name,DefaultValue);
+end;
+
+function ReadJSONValue(AJSON:TJSONObject;const Name:string;DefaultValue:double):double;
+begin
+  if (not(AJSON.TryGetValue<double>(Name,Result))) then
+    Result:=DefaultValue;
+end;
+
+function ReadJSONValue(AJSON:TJSONValue;const Name:string;DefaultValue:double):double;
+begin
+  Result:=ReadJSONValue(AJSON as TJSONObject,Name,DefaultValue);
+end;
+
+function ReadJSONValue(AJSON:TJSONObject;const Name:string;DefaultValue:single):single;
+begin
+  if (not(AJSON.TryGetValue<single>(Name,Result))) then
+    Result:=DefaultValue;
+end;
+
+function ReadJSONValue(AJSON:TJSONValue;const Name:string;DefaultValue:single):single;
 begin
   Result:=ReadJSONValue(AJSON as TJSONObject,Name,DefaultValue);
 end;
@@ -146,6 +196,18 @@ begin
   Result:=Value;
 end;
 
+function WriteJSONValue(AJSON:TJSONObject;const Name:string;Value:double):double;
+begin
+  AJSON.AddPair(TJSONPair.Create(Name, TJSONNumber.Create(Value)));
+  Result:=Value;
+end;
+
+function WriteJSONValue(AJSON:TJSONObject;const Name:string;Value:variant):variant;
+begin
+  AJSON.AddPair(Name, Value);
+  Result:=Value;
+end;
+
 function WriteJSONValue(AJSON:TJSONObject;const Name:string;Value:TJSONArray):TJSONArray;
 begin
   AJSON.AddPair(Name, Value);
@@ -168,6 +230,38 @@ function AddJSONElement(AJSON:TJSONArray;Element:TJSONObject):TJSONObject;
 begin
   AJSON.Add(Element);
   Result:=Element;
+end;
+
+function JSONArrayFromArray(const AnArray: TArray<string>): TJSONArray;
+var Element: string;
+begin
+  Result:=TJSONArray.Create;
+  for Element in AnArray do
+    Result.Add(Element);
+end;
+
+function JSONArrayFromArray(const AnArray: TArray<integer>): TJSONArray;
+var Element: integer;
+begin
+  Result:=TJSONArray.Create;
+  for Element in AnArray do
+    Result.Add(Element);
+end;
+
+function JSONArrayFromArray(const AnArray: TArray<single>): TJSONArray;
+var Element: single;
+begin
+  Result:=TJSONArray.Create;
+  for Element in AnArray do
+    Result.Add(Element);
+end;
+
+function JSONArrayFromArray(const AnArray: TArray<double>): TJSONArray;
+var Element: double;
+begin
+  Result:=TJSONArray.Create;
+  for Element in AnArray do
+    Result.Add(Element);
 end;
 
 procedure RaiseException(const AMessage:string);
@@ -220,12 +314,12 @@ begin
   DestroyCostantObject(TObject(HandleOggetto));
 end;
 
-function SeNullo(const ValoreSottoTest,ValoreSostitutivo:variant):variant;
+function Nvl(const AValue,ADefaultValue:variant):variant;
 begin
-  if (VarIsNull(ValoreSottoTest)) then
-    Result:=ValoreSostitutivo
+  if (VarIsNull(AValue)) then
+    Result:=ADefaultValue
   else
-    Result:=ValoreSottoTest;
+    Result:=AValue;
 end;
 
 function VarIsInt(Valore:variant):boolean;
@@ -867,6 +961,73 @@ begin
   else
     RaiseException('Tipo Variant not supported: %d', [vt]);
   end;
+end;
+
+function CreateProcess(const Command, Arguments: string; const ShowWindow: boolean): THandle;
+{$IFDEF MSWINDOWS}
+  var
+    SI: TStartupInfo;
+    PI: TProcessInformation;
+{$ENDIF}
+{$IFDEF POSIX}
+  var
+    PID: THandle;
+{$ENDIF}
+begin
+  Result := 0;
+
+  {$IFDEF MSWINDOWS}
+  FillChar(SI, SizeOf(SI), 0);
+  SI.cb := SizeOf(SI);
+  with SI do
+    begin
+      dwFlags:=STARTF_USESHOWWINDOW;
+      if (ShowWindow) then
+        wShowWindow:=SW_SHOWNORMAL
+      else
+        wShowWindow:=SW_HIDE;
+    end;
+  Win32Check(
+    Winapi.Windows.
+      CreateProcess(nil,PWideChar(Command+' '+Arguments),nil,nil,false,
+                    NORMAL_PRIORITY_CLASS,nil,nil,SI,PI)
+  );
+  Result := PI.dwProcessId;
+  CloseHandle(PI.hProcess);
+  CloseHandle(PI.hThread);
+  {$ENDIF}
+
+  {$IFDEF POSIX}
+  PID := fork();
+  if PID = 0 then
+    begin
+      execlp(PAnsiChar(AnsiString(Command)), PAnsiChar(AnsiString(Command)),
+             PAnsiChar(AnsiString(Arguments)), nil);
+      _exit(0);
+    end
+  else if PID > 0 then
+    Result := PID;
+  {$ENDIF}
+end;
+
+procedure TerminateProcess(PID: THandle);
+begin
+  {$IFDEF MSWINDOWS}
+  var Handle := OpenProcess(PROCESS_TERMINATE, False, PID);
+  if Handle <> 0 then
+    begin
+      Winapi.Windows.TerminateProcess(Handle, 0);
+      CloseHandle(Handle);
+    end;
+  {$ENDIF}
+
+  {$IFDEF POSIX}
+  kill(PID, SIGKILL);
+  {$ENDIF}
+
+  {$IFDEF IOS}
+    RaiseException('Terminate process not allowed');
+  {$ENDIF}
 end;
 
 

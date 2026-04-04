@@ -41,7 +41,7 @@ type
   end;
 
 var CallerContext: NativeInt;
-    PostMessageProc: PPostMessge;
+    InvokeHost: TInvokeHostProc;
     MeterTask: TMeterTask;
 
 function InvokeLibProcImpl(Context, Instance: NativeInt; const ProcName: PChar; var Args:array of variant): Variant; cdecl;
@@ -71,13 +71,13 @@ end;
 procedure LibInit(const ALibInterface: PLibInterface); cdecl;
 begin
   (*
-    Library initialization. Note how both the reference to the PostMessage procedure and 
+    Library initialization. Note how both the reference to the InvokeHostProc procedure and
     the calling context are saved separately.
-    The PostMessage procedure is the procedure that will allow the library to send messages 
+    The InvokeHostProc procedure is the procedure that will allow the library to send messages
     outward.
     The procedure's parameters are:
       1) The calling context. This must be the same as the one received during initialization.
-      2) An instance value. In our example, this is never used, so it will always be 0.
+      2) The command identifier for sending messages: it's must be COMHOST_INVOKEPROC.
       3) A list of values ??that will be transported by the message outward.
   *)
   with ALibInterface^ do
@@ -85,7 +85,7 @@ begin
       LibGUID:='{05B0E609-B7EB-4FBF-A8F6-024F6749EF0D}';
       InvokeLibProc:=InvokeLibProcImpl;
       CallerContext:=Context;
-      PostMessageProc:=@PostMessage;
+      InvokeHost:=InvokeHostProc;
     end;
 end;
 
@@ -109,6 +109,7 @@ end;
 procedure TMeterTask.Execute;
 var
   Counter: integer;
+  Args: array of Variant;
 begin
   while (not Terminated) do
     begin
@@ -125,14 +126,15 @@ begin
           
           (*
             Sends a message outside with the detected temperature.
-            The first parameter have to be the caller context.
-            The second parameter is the key for these types of messages; in our example, we will always 
-            have a single key with the value 0.  
-            The third parameter is the message's parameters; our messages have two parameters: the first is 
-            a fixed value of zero (for possible future expansions of the current example) and the 
-            second is the detected temperature.
+            The first proc's parameter have to be the caller context.
+            The second proc's parameter is the command's identifier that allow us to send messages.
+            The first value in proc's Args have to be the key for these types of messages;
+            in our example, we will always have a single key with the value 0.
+            The second value in proc's Args is a fixed value of zero (for possible future expansions of the current example).
+            The third value in proc's Args is the detected temperature.
           *)
-          TPostMessage(PostMessageProc)(CallerContext,0,[0,FTemperature]);
+          Args:=[0,0,FTemperature];
+          InvokeHost(CallerContext,COMHOST_POSTMESSAGE,Args);
         end;
     end;
 end;

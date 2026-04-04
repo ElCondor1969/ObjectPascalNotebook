@@ -61,7 +61,7 @@ The following example [notebook](Examples/Notebooks/SimpleMath.opnb) shows how t
 
 When the **Import** statement is executed, it will implement the following steps:
 
-1. Starting from the path of the specified folder, all files with the extensions *pas, dll, so, and dylib* are listed (the extensions of dynamic libraries will depend on the operating system). The search also extends in depth, recursively iterating through all subfolders encountered.
+1. From the path of the specified folder, all files with the extensions *pas, dll, so, and dylib* are listed (the extensions of dynamic libraries will depend on the operating system). The search is limited to the specified path and will not extend to any subfolders.
 2. Once the census is complete, for each file:
 - If the file has the *pas* extension, it is considered a *Unit* library and made available to all notebook cells. Cells will not need to specify the *Uses* statement to use these libraries, as these declarations are implicit.
 - If the file is a dynamic library, then OPNB will load that library into the process, provided that the library is indeed an OPNB-compliant library. We'll see how to write a compliant library later. The purpose of these dynamic libraries is to make external applications, frameworks, and native resources available to our notebook.
@@ -118,22 +118,26 @@ Without the **LibInit** and **LibFree** procedures, the OPNB process will never 
 The project will have to use the **uLibInterface** unit which will declare all the necessary types and records:
 
 ```pascal
-type 
-  TInvokeLibProc = function(Context, Instance: NativeInt; const ProcName: PChar; var Args:array of variant): Variant; cdecl;
-  TPostMessage = procedure(Context: NativeInt; const Key: variant; const Parameters: array of variant); cdecl;
-  PPostMessge = ^TPostMessage;
+type
+  TInvokeLibProc = function(Context, Instance: NativeInt; const ProcName: PChar; var Args: array of variant): variant; cdecl;
+  TInvokeHostProc = function(Context: NativeInt; const Command: variant; var Args: array of variant): variant; cdecl;
+  TSynchronize = procedure(AProcedure: TThreadProcedure); cdecl;
 
-  PLibInterface = ^TLibInterface; 
-  TLibInterface = record 
-    Version: Integer; 
-    Context: NativeInt; 
-    Namespace: PChar; 
-    ExecutionPath: PChar; 
-    LibHandle: TDynLibHandle; 
-    LibGUID: PChar; 
+  PLibInterface = ^TLibInterface;
+  TLibInterface = record
+    Version: Integer;
+    Context: NativeInt;
+    Namespace: PChar;
+    ExecutionPath: PChar;
+    LibHandle: TDynLibHandle;
+    LibGUID: PChar;
     InvokeLibProc: TInvokeLibProc;
-    PostMessage: TPostMessage;
+    InvokeHostProc: TInvokeHostProc;
+    Synchronize: TSynchronize;
   end;
+
+  TLibInit = procedure(const LibInterface: PLibInterface); cdecl;
+  TLibFree = procedure(const LibInterface: PLibInterface); cdecl;
 ```
 
 The **LibInit** procedure receives a pointer to the **TLibInterface** record; There are two fields in this record that must be filled in for the OPNB process to acquire them:
@@ -280,7 +284,7 @@ As we can see, communication with a dynamic library occurs through the **__LibIn
 
 In the previous chapter, we saw how a library uses the **InvokeLibProc** procedure to process commands arriving from outside. In this case, the library is passive, meaning it acts only upon the initiative of an external caller.
 However, there may be cases where the library itself wants to initiate a data/information exchange with the outside world.
-This can be done by sending messages by invoking the **PostMessage** procedure provided by the **TLibInterface** record.
+This can be done by sending messages by invoking the **InvokeHostProc** procedure provided by the **TLibInterface** record.
 For an explanation of this mechanism, see the [Messages posting demo](Examples/Notebooks/Messages%20posting%20demo.opnb) example notebook.
 
 ## Running a notebook on remote machines

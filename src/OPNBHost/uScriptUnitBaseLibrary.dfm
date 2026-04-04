@@ -299,7 +299,8 @@ object ScriptUnitBaseLibrary: TScriptUnitBaseLibrary
         Parameters = <
           item
             Name = 'Value'
-            DataType = 'variant'
+            DataType = 'Variant'
+            IsVarParam = True
             IsWritable = False
           end>
         ResultType = 'integer'
@@ -321,11 +322,24 @@ object ScriptUnitBaseLibrary: TScriptUnitBaseLibrary
         Parameters = <
           item
             Name = 'Value'
-            DataType = 'string'
+            DataType = 'Variant'
+            IsVarParam = True
             IsWritable = False
           end>
         ResultType = 'string'
         OnEval = dwsUnitLibraryFunctionsVarToStrEval
+      end
+      item
+        Name = 'VarToBool'
+        Parameters = <
+          item
+            Name = 'Value'
+            DataType = 'Variant'
+            IsVarParam = True
+            IsWritable = False
+          end>
+        ResultType = 'Boolean'
+        OnEval = dwsUnitLibraryFunctionsVarToBoolEval
       end
       item
         Name = 'RaiseException'
@@ -559,6 +573,41 @@ object ScriptUnitBaseLibrary: TScriptUnitBaseLibrary
             IsWritable = False
           end>
         OnEval = dwsUnitLibraryFunctionsEnablePostingMessageEval
+      end
+      item
+        Name = 'CreateProcess'
+        Parameters = <
+          item
+            Name = 'Command'
+            DataType = 'String'
+            IsVarParam = True
+            IsWritable = False
+          end
+          item
+            Name = 'Arguments'
+            DataType = 'String'
+            HasDefaultValue = True
+            DefaultValue = #39#39
+          end
+          item
+            Name = 'ShowWindow'
+            DataType = 'Boolean'
+            HasDefaultValue = True
+            DefaultValue = False
+          end>
+        ResultType = 'String'
+        OnEval = dwsUnitLibraryFunctionsCreateProcessEval
+      end
+      item
+        Name = 'TerminateProcess'
+        Parameters = <
+          item
+            Name = 'Handle'
+            DataType = 'String'
+            IsVarParam = True
+            IsWritable = False
+          end>
+        OnEval = dwsUnitLibraryFunctionsTerminateProcessEval
       end>
     Delegates = <
       item

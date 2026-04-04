@@ -134,7 +134,7 @@ end;
 
 function TExecutionContext.GetOutput:string;
 begin
-  Result:=FScriptExecuter.GetConsoleOutput;
+  Result:=UTF8Encode(FScriptExecuter.GetConsoleOutput);
 end;
 
 function TExecutionContext.GetOutputData:TJSONobject;

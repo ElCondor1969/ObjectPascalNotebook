@@ -22,8 +22,6 @@ type
     procedure dwsUnitLibraryFunctionsRaiseException_Args_Eval(
       info: TProgramInfo);
     procedure dwsLibreryUnitFunctionsRestartEval(info: TProgramInfo);
-    procedure dwsUnitLibraryFunctionsImport_stringstring_Eval(
-      info: TProgramInfo);
     procedure dwsUnitLibraryFunctionsWriteEval(info: TProgramInfo);
     procedure dwsUnitLibraryClassesTConsoleMethodsWriteEval(Info: TProgramInfo;
       ExtObject: TObject);
@@ -48,6 +46,11 @@ type
       info: TProgramInfo);
     procedure dwsUnitLibraryFunctionsEnablePostingMessageEval(
       info: TProgramInfo);
+    procedure dwsUnitLibraryFunctionsCreateProcessEval(info: TProgramInfo);
+    procedure dwsUnitLibraryFunctionsTerminateProcessEval(info: TProgramInfo);
+    procedure dwsUnitLibraryFunctionsImport_stringstring_Eval(
+      info: TProgramInfo);
+    procedure dwsUnitLibraryFunctionsVarToBoolEval(info: TProgramInfo);
   private
     { Private declarations }
     FScriptExecuter:TScriptExecuter;
@@ -92,6 +95,9 @@ begin
       if (Value<>'') then
         AMessage:=AMessage+Value;
     end;
+  AMessage:=StringReplace(AMessage,#13#10,'<br>',[rfReplaceAll]);
+  AMessage:=StringReplace(AMessage,#13,'<br>',[rfReplaceAll]);
+  AMessage:=StringReplace(AMessage,#10,'<br>',[rfReplaceAll]);
   FScriptExecuter.AddConsoleOutputRow(AMessage, BreakLine);
 end;
 
@@ -251,19 +257,28 @@ end;
 procedure TScriptUnitBaseLibrary.dwsUnitLibraryFunctions__LibInterface_InvokeLibProcEval(
   Info: TProgramInfo);
 var
+  LibGUID: string;
   LibInterface: TLibInterface;
   Data: TData;
 begin
-  LibInterface := FScriptExecuter.GetLibInterface(Info.ValueAsString['LibGUID']);
+  LibGUID:=Info.ValueAsString['LibGUID'];
+  LibInterface:=FScriptExecuter.GetLibInterface(LibGUID);
+  if (LibInterface.LibGUID='') then
+    RaiseException('No library found with GUID: %s',[LibGUID]);
   Data:=Info.Vars['Args'].Data;
-  Info.ResultAsVariant:=
-    LibInterface.InvokeLibProc(
-      NativeInt(FScriptExecuter),
-      Info.ValueAsInteger['Instance'],
-      PChar(Info.ValueAsString['ProcName']),
-      Data
-    );
-  Info.Vars['Args'].Data:=Data;
+  try
+    Info.ResultAsVariant:=
+      LibInterface.InvokeLibProc(
+        NativeInt(FScriptExecuter),
+        Info.ValueAsInteger['Instance'],
+        PChar(Info.ValueAsString['ProcName']),
+        Data
+      );
+    Info.Vars['Args'].Data:=Data;
+  except
+    on E: Exception do
+      RaiseException(E.Message); // Don't use "raise".
+  end;
 end;
 
 procedure TScriptUnitBaseLibrary.
@@ -311,40 +326,44 @@ begin
   WriteJSONValue(FScriptExecuter.OutputData,'UrlRemoteOPNBHost',Info.ValueAsString['URL']);
 end;
 
+procedure TScriptUnitBaseLibrary.dwsUnitLibraryFunctionsTerminateProcessEval(
+  Info: TProgramInfo);
+begin
+  TerminateProcess(StrToUInt(Info.ValueAsString['Handle']));
+end;
+
+procedure TScriptUnitBaseLibrary.dwsUnitLibraryFunctionsVarToBoolEval(
+  Info: TProgramInfo);
+begin
+  Info.ResultAsBoolean:=Info.ValueAsBoolean['Value'];
+end;
+
 procedure TScriptUnitBaseLibrary.dwsUnitLibraryFunctionsVarToFloatEval(
   Info: TProgramInfo);
-var
-  Value: variant;
 begin
-  Value:=Info.ValueAsVariant['Value'];
-  if (VarIsNull(Value)) then
-    Info.ResultAsFloat:=0
-  else
-    Info.ResultAsFloat:=Value;
+  Info.ResultAsFloat:=Info.ValueAsFloat['Value'];
 end;
 
 procedure TScriptUnitBaseLibrary.dwsUnitLibraryFunctionsVarToIntEval(
   Info: TProgramInfo);
-var
-  Value: variant;
 begin
-  Value:=Info.ValueAsVariant['Value'];
-  if (VarIsNull(Value)) then
-    Info.ResultAsInteger:=0
-  else
-    Info.ResultAsInteger:=Value;
+  Info.ResultAsInteger:=Info.ValueAsInteger['Value'];
 end;
 
 procedure TScriptUnitBaseLibrary.dwsUnitLibraryFunctionsVarToStrEval(
   Info: TProgramInfo);
-var
-  Value: variant;
 begin
-  Value:=Info.ValueAsVariant['Value'];
-  if (VarIsNull(Value)) then
-    Info.ResultAsString:=''
-  else
-    Info.ResultAsString:=Value;
+  Info.ResultAsString:=Info.ValueAsString['Value'];
+end;
+
+procedure TScriptUnitBaseLibrary.dwsUnitLibraryFunctionsCreateProcessEval(
+  Info: TProgramInfo);
+begin
+  Info.ResultAsString:=UIntToStr(CreateProcess(
+    Info.ValueAsString['Command'],
+    Trim(Info.ValueAsString['Arguments']),
+    Info.ValueAsBoolean['ShowWindow']
+  ));
 end;
 
 procedure TScriptUnitBaseLibrary.dwsUnitLibraryFunctionsEnablePostingMessageEval(
@@ -356,7 +375,12 @@ end;
 procedure TScriptUnitBaseLibrary.dwsUnitLibraryFunctionsImport_stringstring_Eval(
   Info: TProgramInfo);
 begin
-  FScriptExecuter.Import(Info.ValueAsString['Namespace'],Info.ValueAsString['APath']);
+  try
+    FScriptExecuter.Import(Info.ValueAsString['Namespace'],Info.ValueAsString['APath']);
+  except
+    on E: Exception do
+      RaiseException(E.Message); // Don't use "raise".
+  end;
 end;
 
 procedure TScriptUnitBaseLibrary.dwsUnitLibraryFunctionsProcessMessageEval(
@@ -375,7 +399,7 @@ procedure TScriptUnitBaseLibrary.dwsUnitLibraryFunctionsProcessPostedMessageEval
   Info: TProgramInfo);
 var k:integer;
     Risultato:boolean;
-    MessageCallback,Parameters:variant;
+    CallbackMessage,Parameters:variant;
     CallbackInfo:IInfo;
     ArrayInfo:IScriptDynArray;
     VariantSymbol:TBaseVariantSymbol;
@@ -385,7 +409,7 @@ begin
   with FScriptExecuter do
     while (PopPostMessage(PostedMessage)) do
       begin
-        if (GetMessageCallback(PostedMessage.Key,MessageCallback)) then
+        if (GetMessageCallback(PostedMessage.Key,CallbackMessage)) then
           try
             VariantSymbol:=TBaseVariantSymbol.Create('Parameters');
             CreateNewDynamicArray(VariantSymbol,ArrayInfo);
@@ -393,7 +417,7 @@ begin
             for k:=0 to High(PostedMessage.Parameters) do
               ArrayInfo.AsVariant[k]:=PostedMessage.Parameters[k];
             Parameters:=ArrayInfo;
-            CallbackInfo:=IInfo(IUnknown(MessageCallback));
+            CallbackInfo:=IInfo(IUnknown(CallbackMessage));
             CallbackInfo.Call([Parameters]);
             Risultato:=true;
           finally

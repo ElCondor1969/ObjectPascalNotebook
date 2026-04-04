@@ -3,12 +3,19 @@ unit uLibInterface;
 interface
 
 uses
+  System.Classes,
   uDynLibLoader;
+
+const
+  // Host commands.
+  COMHOST_LOADLIBRARY=0;
+  COMHOST_UNLOADLIBRARY=1;
+  COMHOST_POSTMESSAGE=2;
 
 type
   TInvokeLibProc = function(Context, Instance: NativeInt; const ProcName: PChar; var Args: array of variant): variant; cdecl;
-  TPostMessage = procedure(Context: NativeInt; const Key: variant; const Parameters: array of variant); cdecl;
-  PPostMessge = ^TPostMessage;
+  TInvokeHostProc = function(Context: NativeInt; const Command: variant; var Args: array of variant): variant; cdecl;
+  TSynchronize = procedure(AProcedure: TThreadProcedure); cdecl;
 
   PLibInterface = ^TLibInterface;
   TLibInterface = record
@@ -19,7 +26,8 @@ type
     LibHandle: TDynLibHandle;
     LibGUID: PChar;
     InvokeLibProc: TInvokeLibProc;
-    PostMessage: TPostMessage;
+    InvokeHostProc: TInvokeHostProc;
+    Synchronize: TSynchronize;
   end;
 
   TLibInit = procedure(const LibInterface: PLibInterface); cdecl;

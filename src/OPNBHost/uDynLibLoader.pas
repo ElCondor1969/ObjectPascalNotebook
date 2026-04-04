@@ -8,36 +8,46 @@ uses
 type
   TDynLibHandle = NativeUInt;
 
-function LoadDynLib(const LibName: string): TDynLibHandle;
+function LoadDynLib(const LibName: string; Check: boolean=false): TDynLibHandle;
 function GetDynProc(Lib: TDynLibHandle; const ProcName: PAnsiChar): Pointer;
 procedure FreeDynLib(Lib: TDynLibHandle);
 function IsLibraryFile(const FileName: string): Boolean;
 
 implementation
 
+uses
 {$IFDEF MSWINDOWS}
-uses Winapi.Windows;
+  Winapi.Windows,
 {$ENDIF}
 
 {$IFDEF MACOS}
-uses Posix.Dlfcn;
+  Posix.Dlfcn,
 {$ENDIF}
 
 {$IFDEF LINUX}
-uses Posix.Dlfcn;
+  Posix.Dlfcn,
 {$ENDIF}
 
 {$IFDEF ANDROID}
-uses Posix.Dlfcn;
+  Posix.Dlfcn,
 {$ENDIF}
+  uUtility;
 
-function LoadDynLib(const LibName: string): TDynLibHandle;
+function LoadDynLib(const LibName: string; Check: boolean): TDynLibHandle;
 begin
 {$IFDEF MSWINDOWS}
   Result := TDynLibHandle(LoadLibrary(PChar(LibName)));
 {$ELSE}
   Result := TDynLibHandle(dlopen(PAnsiChar(AnsiString(LibName)), RTLD_NOW));
 {$ENDIF}
+  if (Check) then
+    if (Result=0) then
+      try
+        RaiseLastOSError;
+      except
+        on E: Exception do
+          RaiseException('Error loading library: %s Error: %s',[LibName, E.Message]);
+      end;
 end;
 
 function GetDynProc(Lib: TDynLibHandle; const ProcName: PAnsiChar): Pointer;

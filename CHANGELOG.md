@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.0.5
+- More improvements.
+- 
 ## 0.0.4
 - Message management.
 

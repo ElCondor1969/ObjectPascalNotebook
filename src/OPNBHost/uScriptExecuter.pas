@@ -4,9 +4,9 @@ interface
 
 uses
   System.Classes, dwsUtils, System.SysUtils, System.IOUtils, System.StrUtils, System.Variants, System.Types, Generics.Collections,
-  System.RegularExpressions, uDynLibLoader, JSON, uLibInterface, uUtility, dwsStrings, dwsComp, dwsExprs, dwsDataContext, 
+  System.RegularExpressions, uDynLibLoader, JSON, uLibInterface, uUtility, dwsStrings, dwsComp, dwsExprs, dwsDataContext, dwsInfo,
   dwsCompiler, dwsFunctions, dwsStack, dwsClassesLibModule, dwsJSONConnector, dwsDataBaseLibModule, dwsLinq, dwsLinqSql, 
-  dwsSymbols, dwsUnitSymbols, dwsScriptSource, dwsRTTIConnector, dwsRTTIFunctions;
+  dwsSymbols, dwsUnitSymbols, dwsScriptSource, dwsRTTIConnector, dwsRTTIFunctions, dwsDynamicArrays;
 
 type
   TScriptExecuter = class(TDataModule)
@@ -21,8 +21,8 @@ type
   private
     { Private declarations }
     const
-      ConsoleOutputStartBlockTemplate='<!-- _console_output_start_%s_ -->';
-      ConsoleOutputEndBlockTemplate='<!-- _console_output_end_%s_ -->';
+      ConsoleOutputStartBlockTemplate='<opnbo_%s>';
+      ConsoleOutputEndBlockTemplate='</opnbo_%s>';
     type
       TUnitSearchInfo=record
         Namespace: string;
@@ -47,6 +47,7 @@ type
       end;
   public
     type
+      TConsoleOutputBlockPosition=(bpAdd,bpReplace,bpDelete,bpPrior,bpNext);
       TPostedMessage=record
         Key: variant;
         Parameters: array of variant;
@@ -69,17 +70,15 @@ type
     procedure SetMustRestartFlag(const Value:boolean);
     function GetCancelPending:boolean;
     procedure SetCancelPending(const Value:boolean);
+    procedure LoadLibraries(var Args: array of variant);
+    procedure UnloadLibraries(const Args: array of variant);
   protected
     { Protected declarations }
-    procedure AfterConstruction;override;
-    procedure BeforeDestruction;override;
     function GetUnitList:string;virtual;
   public
     { Public declarations }
-    type
-      TConsoleOutputBlockPosition=(bpAdd,bpReplace,bpDelete,bpPrior,bpNext);
-  public
-    { Public declarations }
+    procedure AfterConstruction;override;
+    procedure BeforeDestruction;override;
     function ExecuteScript(Script:string):string;overload;
     function ExecuteScript(Script:string;InitialVariables:TDictionary<string,variant>):string;overload;
     function GetConsoleOutput:string;
@@ -124,18 +123,38 @@ type
     procedure EndProgram;override;
   end;
 
-{ InternalPostMessage }
+{ InternalInvokeHostProc }
 
-procedure InternalPostMessage(Context: NativeInt; const Key: variant; const Parameters:array of variant); cdecl;
-var k:integer;
+function InternalInvokeHostProc(Context: NativeInt; const Command: variant; var Args: array of variant): variant; cdecl;
+
+  procedure DoPostMessage;
+  var 
+    k:integer;
     PostedMessage:TScriptExecuter.TPostedMessage;
+  begin
+    PostedMessage:=Default(TScriptExecuter.TPostedMessage);
+    PostedMessage.Key:=Args[0];
+    SetLength(PostedMessage.Parameters,Length(Args)-1);
+    for k:=1 to High(Args) do
+      PostedMessage.Parameters[k-1]:=Args[k];
+    TScriptExecuter(Context).PushPostMessage(PostedMessage);
+  end;
+
 begin
-  PostedMessage:=Default(TScriptExecuter.TPostedMessage);
-  PostedMessage.Key:=Key;
-  SetLength(PostedMessage.Parameters,Length(Parameters));
-  for k:=0 to High(Parameters) do
-    PostedMessage.Parameters[k]:=Parameters[k];
-  TScriptExecuter(Context).PushPostMessage(PostedMessage);
+  if (not(VarIsInt(Command))) then
+    RaiseException('Unknown host command');
+  case Command of
+    COMHOST_LOADLIBRARY: TScriptExecuter(Context).LoadLibraries(Args);
+    COMHOST_UNLOADLIBRARY: TScriptExecuter(Context).UnloadLibraries(Args);
+    COMHOST_POSTMESSAGE: DoPostMessage;
+  else
+    RaiseException('Unknown host command');
+  end;
+end;
+
+procedure InternalSynchronize(AProcedure: TThreadProcedure); cdecl;
+begin
+  TThread.Synchronize(nil, AProcedure);
 end;
 
 { TOPNBProgramExecution }
@@ -252,7 +271,7 @@ begin
   FileList:=TDirectory.GetFiles(
     APath,
     '*.*',
-    TSearchOption(1), // soAllDirectories
+    TSearchOption.soTopDirectoryOnly,
     function(const Path:string;const SearchRec:TSearchRec):boolean
     begin
       Result:=((SearchRec.Attr and faDirectory)=0);
@@ -293,13 +312,18 @@ end;
 
 procedure TScriptExecuter.TUnitSearch.ImportFromLibrary(const ANamespace: string; const ALibraryName: string);
 var
+  CurrentDir: string;
   Value: TDynLibHandle;
   LibInit: TLibInit;
   LibInterface: TLibInterface;
 begin
-  Value:=LoadDynLib(ALibraryName);
-  if (Value = 0) then
-    RaiseException('Error loading library: %s',[ALibraryName]);
+  CurrentDir:=TDirectory.GetCurrentDirectory;
+  try
+    TDirectory.SetCurrentDirectory(ExtractFilePath(ALibraryName));
+    Value:=LoadDynLib(ALibraryName, true);
+  finally
+    TDirectory.SetCurrentDirectory(CurrentDir);
+  end;
   try
     LibInit := TLibInit(GetDynProc(Value, 'LibInit'));
     if (not(Assigned(LibInit))) then
@@ -314,7 +338,8 @@ begin
         Namespace:=PChar(ANamespace);
         ExecutionPath:=PChar(ExtractFilePath(ALibraryName));
         LibHandle:=Value;
-        PostMessage:=InternalPostMessage;
+        Synchronize:=InternalSynchronize;
+        InvokeHostProc:=InternalInvokeHostProc;
       end;
     LibInit(@LibInterface);
     if (LibInterface.LibGUID='') then
@@ -502,10 +527,15 @@ begin
             FProgram.ExecutionsClass:=nil;
             FExecution:=nil;
           end;
-        if (Assigned(FExecution)) then
-          FExecution.Execute(0)
-        else
-          FExecution:=FProgram.Execute;
+        try
+          if (Assigned(FExecution)) then
+            FExecution.Execute(0)
+          else
+            FExecution:=FProgram.Execute;
+        except
+          on E: Exception do
+            FExecution.Msgs.AddRuntimeError(E);
+        end;
         if (not(FExecution.Msgs.HasErrors)) then
           Result:=FExecution.Result.ToString
         else
@@ -556,6 +586,7 @@ begin
                   end;
 
             // Initialize all symbols that have not been initialized.
+            FProgram.UnitMains.Initialize(FProgram.ProgramObject.CompileMsgs);
             for k:=0 to FProgram.Table.Count-1 do
               begin
                 Symbol:=FProgram.Table[k];
@@ -779,6 +810,42 @@ begin
   if (FUnitSearch.FLibraryDict.TryGetValue(LibGUID, Result)) then
     Exit;
   Result := Default(TLibInterface);
+end;
+
+procedure TScriptExecuter.LoadLibraries(var Args: array of variant);
+var k: integer;
+    LocalArgs: array of variant;
+begin
+  SetLength(LocalArgs,Length(Args));
+  for k:=0 to High(Args) do
+    LocalArgs[k]:=VarToStr(Args[k]);
+  InternalSynchronize(
+    procedure
+      var k: integer;
+    begin
+      for k:=0 to High(LocalArgs) do
+        LocalArgs[k]:=LoadDynLib(LocalArgs[k], true);
+    end
+  );
+  for k:=0 to High(Args) do
+    Args[k]:=LocalArgs[k];
+end;
+
+procedure TScriptExecuter.UnloadLibraries(const Args: array of variant);
+var k: integer;
+    LocalArgs: array of variant;
+begin
+  SetLength(LocalArgs,Length(Args));
+  for k:=0 to High(Args) do
+    LocalArgs[k]:=VarToStr(Args[k]);
+  InternalSynchronize(
+    procedure
+    var k: integer;
+    begin
+      for k:=0 to High(LocalArgs) do
+        FreeDynLib(LocalArgs[k]);
+    end
+  );
 end;
 
 end.

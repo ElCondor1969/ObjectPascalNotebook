@@ -1,0 +1,44 @@
+{
+  "cells": [
+    {
+      "kind": "code",
+      "value": "Restart; // Execute for release all resources and restart the execution of the notebook.",
+      "language": "objectpascal",
+      "outputs": [
+        {
+          "value": "OK"
+        }
+      ]
+    },
+    {
+      "kind": "markdown",
+      "value": "The **CreateProcess** function allows you to launch any program into execution.\r\nThe function returns the handle of the started process for future use.",
+      "language": "markdown"
+    },
+    {
+      "kind": "code",
+      "value": "var Handle:=CreateProcess(\r\n  'notepad.exe',  // Command name\r\n  'a_note.txt',   // Arguments\r\n  true            // \"true\" for show the process window, \"false\" for hide it\r\n); ",
+      "language": "objectpascal",
+      "outputs": [
+        {
+          "value": "OK"
+        }
+      ]
+    },
+    {
+      "kind": "markdown",
+      "value": "The **TerminateProcess** procedure allows you to forcibly stop a previously started process.",
+      "language": "markdown"
+    },
+    {
+      "kind": "code",
+      "value": "TerminateProcess(Handle);",
+      "language": "objectpascal",
+      "outputs": [
+        {
+          "value": "OK"
+        }
+      ]
+    }
+  ]
+}

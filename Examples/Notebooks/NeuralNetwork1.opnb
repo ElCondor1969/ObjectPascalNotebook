@@ -2,7 +2,7 @@
   "cells": [
     {
       "kind": "markdown",
-      "value": "**WARNING!** Before using this notebook, you need to compile the [MemoryMatrices.dproj](https://github.com/ElCondor1969/ObjectPascalNotebook/blob/698d45c62704f6ef934f2bcc9859df598428ce2c/Examples/MemoryMatrices/MemoryMatrices.dproj) project to generate the necessary dynamic library inside the Lib folder.",
+      "value": "**NOTICE** Before using this notebook, you need to compile the [MemoryMatrices.dproj](https://github.com/ElCondor1969/ObjectPascalNotebook/blob/698d45c62704f6ef934f2bcc9859df598428ce2c/Examples/MemoryMatrices/MemoryMatrices.dproj) project to generate the necessary dynamic library inside the Lib folder.",
       "language": "markdown"
     },
     {
@@ -52,7 +52,7 @@
     },
     {
       "kind": "code",
-      "value": "{$IFDEF TOP_MEMORY}\r\nImport('MemoryMatrices','..\\MemoryMatrices');\r\nImport('MemoryMatricesTOP','..\\MemoryMatricesTensorOperations');\r\n{$ENDIF}\r\n\r\n{$IFDEF TOP_NATIVE}\r\nImport('NativeTOP','..\\NativeTensorOperations');\r\n{$ENDIF}",
+      "value": "{$IFDEF TOP_MEMORY}\r\nImport('MemoryMatrices','..\\MemoryMatrices\\Lib');\r\nImport('MemoryMatricesTOP','..\\MemoryMatricesTensorOperations');\r\n{$ENDIF}\r\n\r\n{$IFDEF TOP_NATIVE}\r\nImport('NativeTOP','..\\NativeTensorOperations');\r\n{$ENDIF}",
       "language": "objectpascal",
       "outputs": [
         {
@@ -131,7 +131,7 @@
       "language": "objectpascal",
       "outputs": [
         {
-          "value": "<!-- _console_output_start_consblok26476106_ --><table style=\"border-collapse:collapse; text-align:center; border:1px solid black;\"><tr><td style=\"padding:8px; border:1px solid black;\">0,378140117041767</td></tr><tr><td style=\"padding:8px; border:1px solid black;\">-0,297780745429918</td></tr><tr><td style=\"padding:8px; border:1px solid black;\">-0,06106325564906</td></tr></table><!-- _console_output_end_consblok26476106_ -->"
+          "value": "<opnbo_consblok14619469><table style=\"border-collapse:collapse; text-align:center; border:1px solid black;\"><tr><td style=\"padding:8px; border:1px solid black;\">0,145869843428954</td></tr><tr><td style=\"padding:8px; border:1px solid black;\">-0,259679951705039</td></tr><tr><td style=\"padding:8px; border:1px solid black;\">0,38915269379504</td></tr></table></opnbo_consblok14619469>"
         }
       ]
     },
@@ -146,7 +146,7 @@
       "language": "objectpascal",
       "outputs": [
         {
-          "value": "<!-- _console_output_start_consblok23965205_ --><table style=\"border-collapse:collapse; text-align:center; border:1px solid black;\"><tr><td style=\"padding:8px; border:1px solid black;\">0,618127952164394</td></tr><tr><td style=\"padding:8px; border:1px solid black;\">0,522707547556735</td></tr><tr><td style=\"padding:8px; border:1px solid black;\">0,516549704223262</td></tr></table><!-- _console_output_end_consblok23965205_ -->"
+          "value": "<opnbo_consblok43934731><table style=\"border-collapse:collapse; text-align:center; border:1px solid black;\"><tr><td style=\"padding:8px; border:1px solid black;\">0,430267661731677</td></tr><tr><td style=\"padding:8px; border:1px solid black;\">0,347480310011523</td></tr><tr><td style=\"padding:8px; border:1px solid black;\">0,283162558735558</td></tr></table></opnbo_consblok43934731>"
         }
       ]
     },
@@ -161,7 +161,7 @@
       "language": "objectpascal",
       "outputs": [
         {
-          "value": "<!-- _console_output_start_BlkLoss_ -->Loss: <b>0,0108172264743643</b><br><!-- _console_output_end_BlkLoss_ --><!-- _console_output_start_consblok05278270_ --><table style=\"border-collapse:collapse; text-align:center; border:1px solid black;\"><tr><td style=\"padding:8px; border:1px solid black;\">0,545182835390033</td></tr><tr><td style=\"padding:8px; border:1px solid black;\">0,444146392795673</td></tr><tr><td style=\"padding:8px; border:1px solid black;\">0,382599929178774</td></tr></table><!-- _console_output_end_consblok05278270_ -->"
+          "value": "<opnbo_BlkLoss>Loss: <b>0,00126770518769224</b><br></opnbo_BlkLoss><opnbo_consblok40787601><table style=\"border-collapse:collapse; text-align:center; border:1px solid black;\"><tr><td style=\"padding:8px; border:1px solid black;\">0,473852451646032</td></tr><tr><td style=\"padding:8px; border:1px solid black;\">0,377475368556882</td></tr><tr><td style=\"padding:8px; border:1px solid black;\">0,291271477703725</td></tr></table></opnbo_consblok40787601>"
         }
       ]
     }

@@ -51,7 +51,7 @@
       "language": "objectpascal",
       "outputs": [
         {
-          "value": "What's your name?<br><!-- _console_output_start_blk1_ -->Now is <b>Sergio Rossi</b><!-- _console_output_end_blk1_ -->"
+          "value": "What's your name?<br><opnbo_blk1>Now is <b>Sergio Rossi</b></opnbo_blk1>"
         }
       ]
     },
@@ -62,7 +62,7 @@
     },
     {
       "kind": "code",
-      "value": "procedure CreateStyleProgressBar;\r\nbegin\r\n  Write(#' \r\n    <style>\r\n        .progress-container {\r\n            width: 100%;\r\n            max-width: 400px;\r\n            background-color: #e0e0e0;\r\n            border-radius: 8px;\r\n            overflow: hidden;\r\n            position: relative;\r\n            height: 30px;\r\n        }\r\n\r\n        .progress-bar {\r\n            height: 100%;\r\n            background-color: #4caf50;\r\n            transition: width 0.3s ease;\r\n        }\r\n\r\n        .progress-text {\r\n            position: absolute;\r\n            width: 100%;\r\n            height: 100%;\r\n            top: 0;\r\n            left: 0;\r\n            display: flex;\r\n            align-items: center;\r\n            justify-content: center;\r\n            font-weight: bold;\r\n            color: #000;\r\n        }\r\n    </style>\r\n  ');\r\nend;",
+      "value": "procedure CreateStyleProgressBar;\r\nbegin\r\n  TConsole.WriteBlock(#' \r\n    <style>\r\n        .progress-container {\r\n            width: 100%;\r\n            max-width: 400px;\r\n            background-color: #e0e0e0;\r\n            border-radius: 8px;\r\n            overflow: hidden;\r\n            position: relative;\r\n            height: 30px;\r\n        }\r\n\r\n        .progress-bar {\r\n            height: 100%;\r\n            background-color: #4caf50;\r\n            transition: width 0.3s ease;\r\n        }\r\n\r\n        .progress-text {\r\n            position: absolute;\r\n            width: 100%;\r\n            height: 100%;\r\n            top: 0;\r\n            left: 0;\r\n            display: flex;\r\n            align-items: center;\r\n            justify-content: center;\r\n            font-weight: bold;\r\n            color: #000;\r\n        }\r\n    </style>\r\n  ');\r\nend;",
       "language": "objectpascal",
       "outputs": [
         {
@@ -86,7 +86,7 @@
       "language": "objectpascal",
       "outputs": [
         {
-          "value": "Operation started...<br><style>\r\n    .progress-container {\r\n        width: 100%;\r\n        max-width: 400px;\r\n        background-color: #e0e0e0;\r\n        border-radius: 8px;\r\n        overflow: hidden;\r\n        position: relative;\r\n        height: 30px;\r\n    }\r\n\r\n    .progress-bar {\r\n        height: 100%;\r\n        background-color: #4caf50;\r\n        transition: width 0.3s ease;\r\n    }\r\n\r\n    .progress-text {\r\n        position: absolute;\r\n        width: 100%;\r\n        height: 100%;\r\n        top: 0;\r\n        left: 0;\r\n        display: flex;\r\n        align-items: center;\r\n        justify-content: center;\r\n        font-weight: bold;\r\n        color: #000;\r\n    }\r\n</style>\r\n<!-- _console_output_start_Blk1_ --><div class=\"progress-container\">   <div class=\"progress-bar\" style=\"width: 100%;\"></div>   <div class=\"progress-text\">100%</div> </div><!-- _console_output_end_Blk1_ -->Done!<br>"
+          "value": "Operation started...<br><opnbo_''><style>\r\n    .progress-container {\r\n        width: 100%;\r\n        max-width: 400px;\r\n        background-color: #e0e0e0;\r\n        border-radius: 8px;\r\n        overflow: hidden;\r\n        position: relative;\r\n        height: 30px;\r\n    }\r\n\r\n    .progress-bar {\r\n        height: 100%;\r\n        background-color: #4caf50;\r\n        transition: width 0.3s ease;\r\n    }\r\n\r\n    .progress-text {\r\n        position: absolute;\r\n        width: 100%;\r\n        height: 100%;\r\n        top: 0;\r\n        left: 0;\r\n        display: flex;\r\n        align-items: center;\r\n        justify-content: center;\r\n        font-weight: bold;\r\n        color: #000;\r\n    }\r\n</style>\r\n</opnbo_''><opnbo_Blk1><div class=\"progress-container\">   <div class=\"progress-bar\" style=\"width: 100%;\"></div>   <div class=\"progress-text\">100%</div> </div></opnbo_Blk1>Done!<br>"
         }
       ]
     },
@@ -97,11 +97,41 @@
     },
     {
       "kind": "code",
-      "value": "WriteLn('A generic text.');\r\nTCOnsole.WriteBlock('Tic...toc...tic...toc...','blk1');\r\nSleep(3000);\r\nTCOnsole.DeleteBlock('blk1');",
+      "value": "WriteLn('A generic text.');\r\nTConsole.WriteBlock('Tic...toc...tic...toc...','blk1');\r\nSleep(3000);\r\nTConsole.DeleteBlock('blk1');",
       "language": "objectpascal",
       "outputs": [
         {
           "value": "A generic text.<br>"
+        }
+      ]
+    },
+    {
+      "kind": "markdown",
+      "value": "By using the **opnbo** tag, it is possible to create placeholders within one of our templates and subsequently enhance them with **TConsole.WriteBlock**.",
+      "language": "markdown"
+    },
+    {
+      "kind": "code",
+      "value": "procedure CreateOutputTemplate;\r\nbegin\r\n  TConsole.WriteBlock(#' \r\n    <ul>\r\n      <li><opnbo_li1>First</opnbo_li1></li>\r\n      <li><opnbo_li2>Second</opnbo_li2></li>\r\n      <li><opnbo_li3>Third</opnbo_li3></li>\r\n    </ul>\r\n  ');\r\nend;",
+      "language": "objectpascal",
+      "outputs": [
+        {
+          "value": "OK"
+        }
+      ]
+    },
+    {
+      "kind": "markdown",
+      "value": "Now let's show our template and replace its values.",
+      "language": "markdown"
+    },
+    {
+      "kind": "code",
+      "value": "CreateOutputTemplate;\r\nSleep(1000);\r\nTConsole.WriteBlock('This is the first item','li1');\r\nSleep(1000);\r\nTConsole.WriteBlock('This is the second item','li2');\r\nSleep(1000);\r\nTConsole.WriteBlock('This is the third item','li3');",
+      "language": "objectpascal",
+      "outputs": [
+        {
+          "value": "<opnbo_''><ul>\r\n  <li><opnbo_li1>This is the first item</opnbo_li1></li>\r\n  <li><opnbo_li2>This is the second item</opnbo_li2></li>\r\n  <li><opnbo_li3>This is the third item</opnbo_li3></li>\r\n</ul>\r\n</opnbo_''>"
         }
       ]
     }

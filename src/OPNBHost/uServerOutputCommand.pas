@@ -59,7 +59,7 @@ begin
     WriteJSONValue(Response,'chunk',Output);
     WriteJSONValue(Response,'completeOutput',Output);
     WriteJSONValue(Response,'outputData',OutputData);
-    AResponseInfo.ContentType:='application/json';
+    AResponseInfo.ContentType:='application/json; charset=utf-8';
     AResponseInfo.ContentText:=Response.ToString;
   finally
     Body.Free;
