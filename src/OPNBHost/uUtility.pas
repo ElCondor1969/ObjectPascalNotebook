@@ -12,15 +12,16 @@ type
   TStringArray=array of string;
   TVarRecArray=array of TVarRec;
 
-function AnsiPosEx(SottoStringa,Stringa:string;Posizione:integer=1):integer;
+function AnsiPosEx(ASubString,AString:string;Position:integer=1):integer;
 procedure RaiseException(const AMessage:string);overload;
 procedure RaiseException(const AMessage:string;const Args:array of const);overload;
-procedure DistruggiVarRec(var Valore:TVarRec);
-function VariantToVarRec(Valore:variant):TVarRec;
-function VarRecToVariant(Valore:TVarRec):variant;
-function VarIsDateTime(Valore:variant):boolean;
-function VarIsBoolean(Valore:variant):boolean;
-function VarIsInt(Valore:variant):boolean;
+procedure DistruggiVarRec(var Value:TVarRec);
+function VariantToVarRec(Value:variant):TVarRec;
+function VarRecToVariant(Value:TVarRec):variant;
+function VarIsDateTime(Value:variant):boolean;
+function VarIsBoolean(Value:variant):boolean;
+function VarIsInt(Value:variant):boolean;
+function VarToInt(Value:variant):integer;
 function VarToBoolean(Value:variant):boolean;
 function VariantDataSize(const V:Variant):Integer;
 procedure DestroyInternalObject(HandleOggetto:Int64);
@@ -50,6 +51,8 @@ function ReadJSONArrayCount(AJSON:TJSONObject;const Name:string):integer;overloa
 function ReadJSONArrayCount(AJSON:TJSONValue;const Name:string):integer;overload;
 function ReadJSONArray(AJSON:TJSONObject;const Name:string):TJSONArray;overload;
 function ReadJSONArray(AJSON:TJSONValue;const Name:string):TJSONArray;overload;
+function ReadJSONObject(AJSON:TJSONObject;const Name:string):TJSONObject;overload;
+function ReadJSONObject(AJSON:TJSONValue;const Name:string):TJSONObject;overload;
 function WriteJSONValue(AJSON:TJSONObject;const Name:string;Value:integer):integer;overload;
 function WriteJSONValue(AJSON:TJSONObject;const Name:string;Value:boolean):boolean;overload;
 function WriteJSONValue(AJSON:TJSONObject;const Name:string;Value:string):string;overload;
@@ -163,6 +166,16 @@ begin
   Result:=ReadJSONArray(AJSON as TJSONObject,Name);
 end;
 
+function ReadJSONObject(AJSON:TJSONObject;const Name:string):TJSONObject;
+begin
+  Result:=AJSON.GetValue(Name) as TJSONObject;
+end;
+
+function ReadJSONObject(AJSON:TJSONValue;const Name:string):TJSONObject;
+begin
+  Result:=ReadJSONObject(AJSON as TJSONObject,Name);
+end;
+
 function ReadJSONArrayCount(AJSON:TJSONObject;const Name:string):integer;
 var Value:TJSONArray;
 begin
@@ -274,16 +287,16 @@ begin
   raise Exception.CreateFmt(AMessage,Args);
 end;
 
-function AnsiPosEx(SottoStringa,Stringa:string;Posizione:integer):integer;
+function AnsiPosEx(ASubString,AString:string;Position:integer):integer;
 var I,MaxIndex,SubLen:integer;
 begin
   Result:=0;
-  SubLen:=Length(SottoStringa);
-  if ((SubLen=0) or (Length(Stringa)=0) or (SubLen>Length(Stringa))) then
+  SubLen:=Length(ASubString);
+  if ((SubLen=0) or (Length(AString)=0) or (SubLen>Length(AString))) then
     Exit;
-  MaxIndex:=Length(Stringa)-SubLen+1;
-  for I:=Posizione to MaxIndex do
-    if (AnsiCompareText(Copy(Stringa,I,SubLen),SottoStringa)=0) then
+  MaxIndex:=Length(AString)-SubLen+1;
+  for I:=Position to MaxIndex do
+    if (AnsiCompareText(Copy(AString,I,SubLen),ASubString)=0) then
       begin
         Result:=I;
         Exit;
@@ -322,20 +335,25 @@ begin
     Result:=AValue;
 end;
 
-function VarIsInt(Valore:variant):boolean;
+function VarIsInt(Value:variant):boolean;
 begin
   Result:=
-    (VarType(Valore) in [varSmallint,varInteger,varShortInt,varByte,varWord,varLongWord,varInt64]);
+    (VarType(Value) in [varSmallint,varInteger,varShortInt,varByte,varWord,varLongWord,varInt64]);
 end;
 
-function VarIsBoolean(Valore:variant):boolean;
+function VarIsBoolean(Value:variant):boolean;
 begin
-  Result:=(VarType(Valore)=varBoolean);
+  Result:=(VarType(Value)=varBoolean);
 end;
 
-function VarIsDateTime(Valore:variant):boolean;
+function VarIsDateTime(Value:variant):boolean;
 begin
-  Result:=(VarType(Valore)=varDate);
+  Result:=(VarType(Value)=varDate);
+end;
+
+function VarToInt(Value:variant):integer;
+begin
+  Result:=Value;
 end;
 
 function VarToBoolean(Value:variant):boolean;
@@ -345,45 +363,45 @@ begin
   Result:=StrToBoolDef(StringValue,false);
 end;
 
-function VarRecToVariant(Valore:TVarRec):variant;
+function VarRecToVariant(Value:TVarRec):variant;
 begin
-  case Valore.VType of
+  case Value.VType of
     vtInteger:
-      Result:=Valore.VInteger;
+      Result:=Value.VInteger;
     vtBoolean:
-      Result:=Valore.VBoolean;
+      Result:=Value.VBoolean;
     vtChar:
-      Result:=Valore.VChar;
+      Result:=Value.VChar;
     vtExtended:
-      Result:=Valore.VExtended^;
+      Result:=Value.VExtended^;
     vtString:
-      Result:=Valore.VString^;
+      Result:=Value.VString^;
     vtPointer:
-      Result:=NativeInt(Valore.VPointer);
+      Result:=NativeInt(Value.VPointer);
     vtPChar:
-      Result:=StrPas(Valore.VPChar);
+      Result:=StrPas(Value.VPChar);
     vtAnsiString:
-      Result:=String(Valore.VAnsiString);
+      Result:=String(Value.VAnsiString);
     vtCurrency:
-      Result:=Valore.VCurrency^;
+      Result:=Value.VCurrency^;
     vtVariant:
-      Result:=Valore.VVariant^;
+      Result:=Value.VVariant^;
     vtInt64:
-      Result:=Valore.VInt64^;
+      Result:=Value.VInt64^;
     vtUnicodeString:
-      Result:=string(PChar(Valore.VUnicodeString));
+      Result:=string(PChar(Value.VUnicodeString));
   else
     Result:=null;
   end;
 end;
 
-function VariantToVarRec(Valore:variant):TVarRec;
+function VariantToVarRec(Value:variant):TVarRec;
 begin
-  case VarType(Valore) of
+  case VarType(Value) of
     varInteger,varSmallint,varShortInt,varByte,varWord,varLongWord:
       begin
         Result.VType:=vtInteger;
-        Result.VInteger:=Valore;
+        Result.VInteger:=Value;
       end;
     varNull,varUnknown,varEmpty:
       begin
@@ -393,72 +411,72 @@ begin
     varBoolean:
       begin
         Result.VType:=vtBoolean;
-        Result.VBoolean:=Valore;
+        Result.VBoolean:=Value;
       end;
     varDouble,varSingle:
       begin
         Result.VType:=vtExtended;
         New(Result.VExtended);
-        Result.VExtended^:=Valore;
+        Result.VExtended^:=Value;
       end;
     varString:
       begin
         Result.VType:=vtString;
         New(Result.VString);
-        Result.VString^:=ShortString(Valore);
+        Result.VString^:=ShortString(Value);
       end;
     varCurrency:
       begin
         Result.VType:=vtCurrency;
         New(Result.VCurrency);
-        Result.VCurrency^:=Valore;
+        Result.VCurrency^:=Value;
       end;
     varVariant:
       begin
         Result.VType:=vtVariant;
         New(Result.VVariant);
-        Result.VVariant^:=Valore;
+        Result.VVariant^:=Value;
       end;
     varOleStr:
       begin
         Result.VType:=vtWideString;
         Result.VWideString:=nil;
-        WideString(Result.VWideString):=WideString(Valore);
+        WideString(Result.VWideString):=WideString(Value);
       end;
     varInt64:
       begin
         Result.VType:=vtInt64;
         New(Result.VInt64);
-        Result.VInt64^:=Valore;
+        Result.VInt64^:=Value;
       end;
     varUString:
       begin
         Result.VType:=vtUnicodeString;
         Result.VUnicodeString:=nil;
-        UnicodeString(Result.VUnicodeString):=UnicodeString(Valore);
+        UnicodeString(Result.VUnicodeString):=UnicodeString(Value);
       end;
   end;
 end;
 
-procedure DistruggiVarRec(var Valore:TVarRec);
+procedure DistruggiVarRec(var Value:TVarRec);
 begin
-  case Valore.VType of
+  case Value.VType of
     vtExtended:
-      Dispose(Valore.VExtended);
+      Dispose(Value.VExtended);
     vtString:
-      Dispose(Valore.VString);
+      Dispose(Value.VString);
     vtCurrency:
-      Dispose(Valore.VCurrency);
+      Dispose(Value.VCurrency);
     vtVariant:
-      Dispose(Valore.VVariant);
+      Dispose(Value.VVariant);
     vtWideString:
-      WideString(Valore.VWideString):=WideString('');
+      WideString(Value.VWideString):=WideString('');
     vtInt64:
-      Dispose(Valore.VInt64);
+      Dispose(Value.VInt64);
     vtUnicodeString:
-      UnicodeString(Valore.VUnicodeString):=UnicodeString('');
+      UnicodeString(Value.VUnicodeString):=UnicodeString('');
   end;
-  Finalize(Valore);
+  Finalize(Value);
 end;
 
 function GetFileExtension(const FileName:string):string;

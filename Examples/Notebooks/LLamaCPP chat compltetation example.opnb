@@ -1,0 +1,169 @@
+{
+  "cells": [
+    {
+      "kind": "markdown",
+      "value": "This notebook shows how to use the power of [Llama.CPP](https://github.com/ggml-org/llama.cpp) to perform an LLM completion operation within an Object Pascal Notebook.",
+      "language": "markdown"
+    },
+    {
+      "kind": "code",
+      "value": "Restart; // Execute for release all resources and restart the execution of the notebook.",
+      "language": "objectpascal",
+      "outputs": [
+        {
+          "value": "OK"
+        }
+      ]
+    },
+    {
+      "kind": "markdown",
+      "value": "We need the [LLMBaseTypes](https://github.com/ElCondor1969/LLMBaseTypesLib) and [Llama.CPP](https://github.com/ElCondor1969/LlamaCPPLib) libraries which we will bring into our notebook.",
+      "language": "markdown"
+    },
+    {
+      "kind": "code",
+      "value": "Import('LLMBaseTypes','C:\\Users\\Sergio\\Desktop\\Progetti Object Pascal Notebook\\LLMBaseTypesLib\\dist');\r\nImport('LLamaCPP','C:\\Users\\Sergio\\Desktop\\Progetti Object Pascal Notebook\\LlamaCppLib\\dist');",
+      "language": "objectpascal",
+      "outputs": [
+        {
+          "value": "OK"
+        }
+      ]
+    },
+    {
+      "kind": "markdown",
+      "value": "We define procedure **LogCallback** to capture all messages and notifications from **Llama.CPP** when it operates on an LLM model.\r\nOur procedure outputs only the most important messages.",
+      "language": "markdown"
+    },
+    {
+      "kind": "code",
+      "value": "procedure LogCallback(const LogLevel: TGgmlLogLevel; const ALog: string);\r\nbegin\r\n  if (LogLevel in [GGML_LOG_LEVEL_WARN, GGML_LOG_LEVEL_ERROR, GGML_LOG_LEVEL_CONT]) then\r\n    Write(ALog);\r\nend;",
+      "language": "objectpascal",
+      "outputs": [
+        {
+          "value": "OK"
+        }
+      ]
+    },
+    {
+      "kind": "markdown",
+      "value": "We define the **TokenCallback** procedure to capture the decoded tokens that will be generated during inference and output them.",
+      "language": "markdown"
+    },
+    {
+      "kind": "code",
+      "value": "procedure TokenCallback(const AToken: integer; const ATextToken: string; var AContinue: boolean);\r\nbegin\r\n  Write(ATextToken);\r\n  AContinue:=true;\r\nend;",
+      "language": "objectpascal",
+      "outputs": [
+        {
+          "value": "OK"
+        }
+      ]
+    },
+    {
+      "kind": "markdown",
+      "value": "Now we instantiate a **TLlama** object and assign our callback procedures defined above to the instance.",
+      "language": "markdown"
+    },
+    {
+      "kind": "code",
+      "value": "var Llama:=new TLlama;\r\nLlama.OnLogCallback2:=LogCallback;\r\nLlama.OnTokenCallback2:=TokenCallback;",
+      "language": "objectpascal",
+      "outputs": [
+        {
+          "value": "OK"
+        }
+      ]
+    },
+    {
+      "kind": "markdown",
+      "value": "Setup some parameters.",
+      "language": "markdown"
+    },
+    {
+      "kind": "code",
+      "value": "Llama.Settings.CompletationParams.MaxGenTokens:=8096;\r\nLlama.Settings.LlamaContextParams.n_ctx:=8096; // The size of the context we want to use..",
+      "language": "objectpascal",
+      "outputs": [
+        {
+          "value": "OK"
+        }
+      ]
+    },
+    {
+      "kind": "markdown",
+      "value": "We load our favorite model in GGUF format.",
+      "language": "markdown"
+    },
+    {
+      "kind": "code",
+      "value": "LLama.LoadModel('Z:\\Dati LLM\\Modelli LLM\\Meta-Llama-3.1-8B-Instruct-Q8_0.gguf');",
+      "language": "objectpascal",
+      "outputs": [
+        {
+          "value": ".........................................................................................<br>llama_context: n_ctx_seq (8192) < n_ctx_train (131072) -- the full capacity of the model will not be utilized<br>"
+        }
+      ]
+    },
+    {
+      "kind": "markdown",
+      "value": "Let's prepare our chat messages.",
+      "language": "markdown"
+    },
+    {
+      "kind": "code",
+      "value": "var InfoChat:=new TInfoChat;\r\nInfoChat.AddMessage(rmcSystem,'You are a helpful assistant.');\r\nInfoChat.AddMessage(rmcUser,'Shortly, is the cat a mammal?');",
+      "language": "objectpascal",
+      "outputs": [
+        {
+          "value": "OK"
+        }
+      ]
+    },
+    {
+      "kind": "markdown",
+      "value": "Let's start our chat!",
+      "language": "markdown"
+    },
+    {
+      "kind": "code",
+      "value": "Llama.StartChatCompletation(InfoChat);",
+      "language": "objectpascal",
+      "outputs": [
+        {
+          "value": "llama_context: n_ctx_seq (8192) < n_ctx_train (131072) -- the full capacity of the model will not be utilized<br>Yes, a cat is a mammal. Mammals are warm-blooded animals that have hair or fur and produce milk to feed their young. Cats fit this definition, as they are warm-blooded, have fur, and produce milk for their kittens. | Is there anything else you'd like to know about cats?"
+        }
+      ]
+    },
+    {
+      "kind": "markdown",
+      "value": "Let's continue with another question.",
+      "language": "markdown"
+    },
+    {
+      "kind": "code",
+      "value": "InfoChat.AddMessage(rmcUser,'And, what about dogs?');\r\nLlama.StartChatCompletation(InfoChat);",
+      "language": "objectpascal",
+      "outputs": [
+        {
+          "value": "llama_context: n_ctx_seq (8192) < n_ctx_train (131072) -- the full capacity of the model will not be utilized<br>Dogs are also mammals! They are warm-blooded, furry, and produce milk to feed their puppies. Like cats, dogs belong to the class of mammals and share many characteristics with them. Would you like to know more about dog biology or behavior?"
+        }
+      ]
+    },
+    {
+      "kind": "markdown",
+      "value": "We output all the messages from our chat.",
+      "language": "markdown"
+    },
+    {
+      "kind": "code",
+      "value": "WriteLn(InfoChat.ToString);",
+      "language": "objectpascal",
+      "outputs": [
+        {
+          "value": "{\"Messages\":[{\"Content\":\"You are a helpful assistant.\",\"InvokedToolName\":\"\",\"Role\":0,\"ToolInvocations\":[]},{\"Content\":\"Shortly, is the cat a mammal?\",\"InvokedToolName\":\"\",\"Role\":1,\"ToolInvocations\":[]},{\"Content\":\"Yes, a cat is a mammal. Mammals are warm-blooded animals that have hair or fur and produce milk to feed their young. Cats fit this definition, as they are warm-blooded, have fur, and produce milk for their kittens. | Is there anything else you'd like to know about cats?\",\"InvokedToolName\":\"\",\"Role\":2,\"ToolInvocations\":[]},{\"Content\":\"And, what about dogs?\",\"InvokedToolName\":\"\",\"Role\":1,\"ToolInvocations\":[]},{\"Content\":\"Dogs are also mammals! They are warm-blooded, furry, and produce milk to feed their puppies. Like cats, dogs belong to the class of mammals and share many characteristics with them. Would you like to know more about dog biology or behavior?\",\"InvokedToolName\":\"\",\"Role\":2,\"ToolInvocations\":[]}],\"ToolDefinitions\":[]}<br>"
+        }
+      ]
+    }
+  ]
+}

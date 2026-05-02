@@ -54,6 +54,7 @@ type
       end;
   private
     { Private declarations }
+    FInternalDestroying: boolean;
     FExecutionPath:string;
     FVariablesDictionary:TDictionary<string,variant>;
     FLibraryUnitAdded:TStringList;
@@ -61,7 +62,6 @@ type
     FProgram:IdwsProgram;
     FExecution:IdwsProgramExecution;
     FPostingMessageEnabled:boolean;
-    FDestroying:boolean;
     FOutputData:TJSONObject;
     FPostedMessages:TThreadedQueue<TPostedMessage>;
     FMessageCallbacksDictionary:TDictionary<variant,variant>;
@@ -117,11 +117,16 @@ const
 type
   TOPNBProgramExecution=class(TdwsProgramExecution)
   private
-    FFlagPreserveStack:boolean;
+    FFlagPreserveStack: boolean;
+    FScriptExecuter: TScriptExecuter;
   public
+    constructor Create(aProgram : TdwsMainProgram; const stackParams : TStackParameters); override;
     function BeginProgram:boolean;override;
     procedure EndProgram;override;
   end;
+
+threadvar
+  TheScriptExecuter: TScriptExecuter;
 
 { InternalInvokeHostProc }
 
@@ -159,6 +164,13 @@ end;
 
 { TOPNBProgramExecution }
 
+constructor TOPNBProgramExecution.Create(aProgram: TdwsMainProgram;
+  const stackParams: TStackParameters);
+begin
+  inherited;
+  FScriptExecuter:=TheScriptExecuter;
+end;
+
 function TOPNBProgramExecution.BeginProgram:boolean;
 var
   TempStack:TStackMixIn;
@@ -182,8 +194,13 @@ end;
 
 procedure TOPNBProgramExecution.EndProgram;
 begin
-  FProgramState:=psReadyToRun;
-  FFlagPreserveStack:=true;
+  if (FScriptExecuter.FInternalDestroying) then
+    inherited
+  else
+    begin
+      FProgramState:=psReadyToRun;
+      FFlagPreserveStack:=true;
+    end;
 end;
 
 { TScriptExecuter.TUnitSearch }
@@ -225,7 +242,11 @@ begin
     begin
       LibHandle := Value.LibHandle;
       LibFree := TLibFree(GetDynProc(LibHandle, 'LibFree'));
-      LibFree(@Value);
+      if (Assigned(LibFree)) then
+        try
+          LibFree(@Value);
+        except
+        end;
       try
         FreeDynLib(LibHandle);
       except
@@ -392,7 +413,7 @@ end;
 
 procedure TScriptExecuter.BeforeDestruction;
 begin
-  FDestroying:=true;
+  FInternalDestroying:=true;
   ExecuteScript(''); // Release all resources;
   inherited;
   FPostedMessages.Free;
@@ -509,8 +530,6 @@ begin
         FProgram:=DelphiWebScript.Compile(Script);
         if (FProgram.Msgs.HasErrors) then
           FlagDropProgram:=true
-        else if FDestroying then
-          FProgram.ExecutionsClass:=nil
         else
           FProgram.ExecutionsClass:=TOPNBProgramExecution;
       end;
@@ -518,15 +537,11 @@ begin
       ReportAndRaiseCompilationErrors
     else
       begin
+        TheScriptExecuter:=Self;
         if (Assigned(InitialVariables)) then
           for Variable in InitialVariables.ToArray do
             FVariablesDictionary.AddOrSetValue(Variable.Key,Variable.Value);
         FVariablesDictionary.AddOrSetValue(varConsoleOutout,'');
-        if FDestroying then
-          begin
-            FProgram.ExecutionsClass:=nil;
-            FExecution:=nil;
-          end;
         try
           if (Assigned(FExecution)) then
             FExecution.Execute(0)
@@ -536,16 +551,19 @@ begin
           on E: Exception do
             FExecution.Msgs.AddRuntimeError(E);
         end;
-        if (not(FExecution.Msgs.HasErrors)) then
-          Result:=FExecution.Result.ToString
+        if FInternalDestroying then
+          FExecution:=nil
         else
-          with FExecution.Msgs do
-            begin
-              Error:=Msgs[Count-1].Text;
-              AddConsoleOutputRow(Error);
-              Abort;
-            end;
-        
+          if (not(FExecution.Msgs.HasErrors)) then
+            Result:=FExecution.Result.ToString
+          else
+            with FExecution.Msgs do
+              begin
+                Error:=Msgs[Count-1].Text;
+                AddConsoleOutputRow(Error);
+                Abort;
+              end;
+
         // If libraries have been imported then...
         if (FLibraryUnitAdded.Count>0) then
           begin
@@ -585,6 +603,9 @@ begin
                       end;
                   end;
 
+            // Execute the compilated stataments.
+            FExecution.Execute(0);
+
             // Initialize all symbols that have not been initialized.
             FProgram.UnitMains.Initialize(FProgram.ProgramObject.CompileMsgs);
             for k:=0 to FProgram.Table.Count-1 do
@@ -597,12 +618,12 @@ begin
                       if (Assigned(TUnitSymbol(Symbol).Main.InitializationExpr)) then
                         TUnitSymbol(Symbol).Main.InitializationExpr.EvalNoResult(FExecution.GetExecutionObject);
                       if (Assigned(TUnitSymbol(Symbol).Main.FinalizationExpr)) then
-                        FProgram.ProgramObject.AddFinalExpr(TUnitSymbol(Symbol).Main.FinalizationExpr  as TBlockExprBase);
+                        begin
+                          FProgram.ProgramObject.AddFinalExpr(TUnitSymbol(Symbol).Main.FinalizationExpr as TBlockExprBase);
+                          TUnitSymbol(Symbol).Main.FinalizationExpr.IncRefCount;
+                        end;
                     end;
               end;
-
-            // Execute the compilated stataments.
-            FExecution.Execute(0);
         end;
       end;
   finally

@@ -1,0 +1,104 @@
+{
+  "cells": [
+    {
+      "kind": "code",
+      "value": "Restart; // Execute for release all resources and restart the execution of the notebook.",
+      "language": "objectpascal",
+      "outputs": [
+        {
+          "value": "OK"
+        }
+      ]
+    },
+    {
+      "kind": "markdown",
+      "value": "We need the [LLMBaseTypes](https://github.com/ElCondor1969/LLMBaseTypesLib) and [Llama.CPP](https://github.com/ElCondor1969/LlamaCPPLib) libraries which we will bring into our notebook.",
+      "language": "markdown"
+    },
+    {
+      "kind": "code",
+      "value": "Import('LLMBaseTypes','C:\\Users\\Sergio\\Desktop\\Progetti Object Pascal Notebook\\LLMBaseTypesLib\\dist');\r\nImport('LLamaCPP','C:\\Users\\Sergio\\Desktop\\Progetti Object Pascal Notebook\\LlamaCppLib\\dist');",
+      "language": "objectpascal",
+      "outputs": [
+        {
+          "value": "OK"
+        }
+      ]
+    },
+    {
+      "kind": "markdown",
+      "value": "We define procedure **LogCallback** to capture all messages and notifications from **Llama.CPP** when it operates on an LLM model.\r\nOur procedure outputs only the most important messages.",
+      "language": "markdown"
+    },
+    {
+      "kind": "code",
+      "value": "procedure LogCallback(const LogLevel: TGgmlLogLevel; const ALog: string);\r\nbegin\r\n  if (LogLevel in [GGML_LOG_LEVEL_WARN, GGML_LOG_LEVEL_ERROR, GGML_LOG_LEVEL_CONT]) then\r\n    Write(ALog);\r\nend;",
+      "language": "objectpascal",
+      "outputs": [
+        {
+          "value": "OK"
+        }
+      ]
+    },
+    {
+      "kind": "markdown",
+      "value": "Now we instantiate a **TLlama** object and assign our callback procedure defined above to the instance.",
+      "language": "markdown"
+    },
+    {
+      "kind": "code",
+      "value": "var Llama:=new TLlama;\r\nLlama.OnLogCallback2:=LogCallback;",
+      "language": "objectpascal",
+      "outputs": [
+        {
+          "value": "OK"
+        }
+      ]
+    },
+    {
+      "kind": "markdown",
+      "value": "We load our favorite model in GGUF format.\r\nWe are only interested in loading the model vocabulary and not its weights.",
+      "language": "markdown"
+    },
+    {
+      "kind": "code",
+      "value": "Llama.Settings.LlamaModelParams.Vocab_Only      := True;\r\nLlama.Settings.LlamaModelParams.use_mmap        := False;\r\nLlama.Settings.LlamaModelParams.use_mlock       := False;\r\nLlama.Settings.LlamaModelParams.use_direct_io   := False;\r\nLlama.Settings.LlamaModelParams.check_tensors   := False;\r\nLlama.Settings.LlamaModelParams.use_extra_bufts := False;\r\nLlama.Settings.LlamaModelParams.no_alloc        := False;\r\nLlama.Settings.LlamaModelParams.no_host         := False;\r\nLlama.LoadModel('Z:\\Dati LLM\\Modelli LLM\\Meta-Llama-3.1-8B-Instruct-Q8_0.gguf');",
+      "language": "objectpascal",
+      "outputs": [
+        {
+          "value": "llama_context: n_ctx_seq (512) > n_ctx_train (0) -- possible training context overflow<br>"
+        }
+      ]
+    },
+    {
+      "kind": "markdown",
+      "value": "Now let's tokenize one of our strings.",
+      "language": "markdown"
+    },
+    {
+      "kind": "code",
+      "value": "var Tokens:=Llama.Tokenize('It''s a beautiful day to immerse yourself in the world of LLMs!');\r\n\r\nfor var k:=0 to Tokens.High() do\r\n  WriteLn(Tokens[k]);",
+      "language": "objectpascal",
+      "outputs": [
+        {
+          "value": "128000<br>2181<br>596<br>264<br>6366<br>1938<br>311<br>26612<br>325<br>6261<br>304<br>279<br>1917<br>315<br>445<br>11237<br>82<br>0<br>"
+        }
+      ]
+    },
+    {
+      "kind": "markdown",
+      "value": "Now let's reconstruct our string from the tokens.",
+      "language": "markdown"
+    },
+    {
+      "kind": "code",
+      "value": "var AString:=Llama.Detokenize(Tokens, false);\r\nWriteLn(AString);",
+      "language": "objectpascal",
+      "outputs": [
+        {
+          "value": "It's a beautiful day to immerse yourself in the world of LLMs!<br>"
+        }
+      ]
+    }
+  ]
+}

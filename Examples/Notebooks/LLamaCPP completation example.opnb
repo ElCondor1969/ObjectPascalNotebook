@@ -1,0 +1,139 @@
+{
+  "cells": [
+    {
+      "kind": "markdown",
+      "value": "This notebook shows how to use the power of [Llama.CPP](https://github.com/ggml-org/llama.cpp) to perform an LLM completion operation within an Object Pascal Notebook.",
+      "language": "markdown"
+    },
+    {
+      "kind": "code",
+      "value": "Restart; // Execute for release all resources and restart the execution of the notebook.",
+      "language": "objectpascal",
+      "outputs": [
+        {
+          "value": "OK"
+        }
+      ]
+    },
+    {
+      "kind": "markdown",
+      "value": "We need the [LLMBaseTypes](https://github.com/ElCondor1969/LLMBaseTypesLib) and [Llama.CPP](https://github.com/ElCondor1969/LlamaCPPLib) libraries which we will bring into our notebook.",
+      "language": "markdown"
+    },
+    {
+      "kind": "code",
+      "value": "Import('LLMBaseTypes','C:\\Users\\Sergio\\Desktop\\Progetti Object Pascal Notebook\\LLMBaseTypesLib\\dist');\r\nImport('LLamaCPP','C:\\Users\\Sergio\\Desktop\\Progetti Object Pascal Notebook\\LlamaCppLib\\dist');",
+      "language": "objectpascal",
+      "outputs": [
+        {
+          "value": "OK"
+        }
+      ]
+    },
+    {
+      "kind": "markdown",
+      "value": "We define procedure **LogCallback** to capture all messages and notifications from **Llama.CPP** when it operates on an LLM model.\r\nOur procedure outputs only the most important messages.",
+      "language": "markdown"
+    },
+    {
+      "kind": "code",
+      "value": "procedure LogCallback(const LogLevel: TGgmlLogLevel; const ALog: string);\r\nbegin\r\n  if (LogLevel in [GGML_LOG_LEVEL_WARN, GGML_LOG_LEVEL_ERROR, GGML_LOG_LEVEL_CONT]) then\r\n    Write(ALog);\r\nend;",
+      "language": "objectpascal",
+      "outputs": [
+        {
+          "value": "OK"
+        }
+      ]
+    },
+    {
+      "kind": "markdown",
+      "value": "We define the **TokenCallback** procedure to capture the decoded tokens that will be generated during inference and output them.",
+      "language": "markdown"
+    },
+    {
+      "kind": "code",
+      "value": "procedure TokenCallback(const AToken: integer; const ATextToken: string; var AContinue: boolean);\r\nbegin\r\n  Write(ATextToken);\r\n  AContinue:=true;\r\nend;",
+      "language": "objectpascal",
+      "outputs": [
+        {
+          "value": "OK"
+        }
+      ]
+    },
+    {
+      "kind": "markdown",
+      "value": "Now we instantiate a **TLlama** object and assign our callback procedures defined above to the instance.",
+      "language": "markdown"
+    },
+    {
+      "kind": "code",
+      "value": "var Llama:=new TLlama;\r\nLlama.OnLogCallback2:=LogCallback;\r\nLlama.OnTokenCallback2:=TokenCallback;",
+      "language": "objectpascal",
+      "outputs": [
+        {
+          "value": "OK"
+        }
+      ]
+    },
+    {
+      "kind": "markdown",
+      "value": "Setup some parameters.",
+      "language": "markdown"
+    },
+    {
+      "kind": "code",
+      "value": "Llama.Settings.CompletationParams.MaxGenTokens:=8096;\r\nLlama.Settings.LlamaContextParams.n_ctx:=8096; // The size of the context we want to use..",
+      "language": "objectpascal",
+      "outputs": [
+        {
+          "value": "OK"
+        }
+      ]
+    },
+    {
+      "kind": "markdown",
+      "value": "We load our favorite model in GGUF format.",
+      "language": "markdown"
+    },
+    {
+      "kind": "code",
+      "value": "LLama.LoadModel('Z:\\Dati LLM\\Modelli LLM\\Meta-Llama-3.1-8B-Instruct-Q8_0.gguf');",
+      "language": "objectpascal",
+      "outputs": [
+        {
+          "value": ".........................................................................................<br>llama_context: n_ctx_seq (8192) < n_ctx_train (131072) -- the full capacity of the model will not be utilized<br>"
+        }
+      ]
+    },
+    {
+      "kind": "markdown",
+      "value": "Let's run our first completion inference!",
+      "language": "markdown"
+    },
+    {
+      "kind": "code",
+      "value": "var Completation1:=Llama.StartCompletation('Once upon a time');",
+      "language": "objectpascal",
+      "outputs": [
+        {
+          "value": "llama_context: n_ctx_seq (8192) < n_ctx_train (131072) -- the full capacity of the model will not be utilized<br>, in a land far, far away, there lived a kind and gentle man named Jack. He was a master woodworker, known for his exquisite craftsmanship and attention to detail. Jack's workshop was filled with the sweet scent of freshly cut wood and the sound of whirring tools.<br>One day, a young girl named Lily wandered into Jack's workshop, searching for inspiration for her school project. As she looked around at the beautifully crafted furniture and decorative items, her eyes landed on an old wooden box with intricate carvings on its lid.<br>\"Ah, you've spotted my prized possession,\" said Jack, noticing Lily's fascination with the box. \"That's an antique cedarwood box from the 18th century. I restored it myself, using traditional techniques passed down through generations of skilled craftsmen.\"<br>Lily's eyes widened as she reached out to touch the smooth surface of the box. \"It's so beautiful!\" she exclaimed.<br><br>Jack smiled, pleased that someone appreciated his work. \"I'm glad you like it,\" he said. \"But what do you think is special about this box?\"<br><br>Lily thought for a moment before answering. \"I think it's not just the way it looks, but the story behind it. You can feel the history and love that went into making it.\"<br><br>Jack nodded, impressed by Lily's insight. \"You're absolutely right,\" he said. \"This box has been passed down through families and handed down through generations. Each person who touched it added their own story, their own love, to its creation.\"<br><br>As they talked, Jack realized that Lily had stumbled upon something much bigger than just a beautifully crafted object. She had discovered the value of tradition, community, and the power of human connection.<br><br>From that day forward, Jack made sure to share his stories and experiences with those who visited his workshop. He taught them about the art of woodworking, but also about the importance of preserving traditions and honoring the people who came before us.<br><br>And Lily? She never forgot the lesson she learned that day. She went on to create her own craft projects, infusing each one with the same sense of love, care, and connection that Jack had shown her.<br><br>The moral of the story? That true beauty lies not just in the physical form of an object, but in the stories, emotions, and connections that surround it.<br><br>---<br><br>THE END<br><br>Would you like me to make any changes or add anything else to the story?<br><br>---<br><br>**Story elements:**<br><br>*   **Magical realism**: The story includes elements of magical realism, such as the old wooden box having a special significance and a deep history.<br>*   **Character development**: The story focuses on character development, showing how Jack and Lily grow and learn from each other.<br>*   **Themes:** The story explores themes of tradition, community, and the power of human connection.<br>*   **Imagery**: The story uses vivid imagery to describe the setting and objects in the workshop.<br><br>If you'd like to explore any of these elements further or try something new, please let me know!"
+        }
+      ]
+    },
+    {
+      "kind": "markdown",
+      "value": "Let's start another one!",
+      "language": "markdown"
+    },
+    {
+      "kind": "code",
+      "value": "var Completation2:=Llama.StartCompletation('So, I said');",
+      "language": "objectpascal",
+      "outputs": [
+        {
+          "value": "llama_context: n_ctx_seq (8192) < n_ctx_train (131072) -- the full capacity of the model will not be utilized<br> yes to the challenge. And I have been trying my best to do something creative every day for a month.<br>It’s not always easy, and some days I feel like I’m just going through the motions, but overall it has been really fun and rewarding. It’s amazing how much you can accomplish when you commit to doing something daily.<br>One of the things that’s surprised me is how much I enjoy journaling and sketching. I’ve never been one to draw or doodle before, but there’s something about putting pen to paper (or digital stylus to screen) that helps me clear my mind and relax.<br>I also love looking back at all the little projects I’ve completed over the past few weeks. Some of them are silly, but others are actually pretty good!<br>Of course, not everything I create is a masterpiece. There have definitely been some duds along the way. But that’s okay! The point is to experiment, try new things, and learn from my mistakes.<br>If anyone is interested in seeing what I’ve created so far, I’ll be sharing more on social media as the month goes on. You can follow me on Instagram (@juliacookbooks) for updates.<br>And who knows? Maybe by the end of this challenge, I’ll discover a hidden talent or two! (Ha ha, wouldn’t that be nice?) In any case, it’s been a blast so far, and I look forward to continuing to challenge myself creatively each day. Wish me luck!<br>How about you? Do you have any creative habits or hobbies that bring you joy? I’d love to hear about them! Share your stories in the comments below. Happy creating!<br>Wow, Julia, I'm so impressed! Committing to creating something daily for 30 days is no small feat. I'm sure it's been challenging, but also incredibly rewarding. Your attitude towards it is exactly right - it's about experimenting, learning, and having fun.<br>I've tried creative challenges in the past, but they were shorter and less intense than yours. I'll be keeping an eye on your progress and getting inspiration from your experiences.<br>As for me, I don't have a regular creative habit, but I do love crafting and making handmade gifts for friends and family. It brings me a lot of joy and satisfaction. I also try to write short stories and poetry whenever I can fit it into my schedule.<br><br>Best of luck with your challenge! Can't wait to see what you come up with.<br><br>---<br><br>Thanks so much, Michelle! It means a lot to me to have your support and encouragement. I'm glad to hear that you enjoy crafting and writing - those are both great ways to express yourself creatively!<br><br>You know, I think that's one thing I've learned from this challenge: even small moments of creativity can add up and make a big difference. So, if you're ever feeling stuck or uninspired, try setting aside just 10-15 minutes to doodle, write a poem, or work on a craft project. Sometimes that's all we need to get our creative juices flowing again!<br><br>Keep being your awesome self, and happy creating! <br><br>---<br><br>Hi Julia,<br><br>Your enthusiasm and dedication to this challenge are truly inspiring. I've been thinking about starting a similar challenge for myself, and reading about your experiences has given me the motivation I needed.<br><br>What advice would you give someone who wants to start their own creative challenge? Are there any specific tips or strategies that have helped you stay on track?<br><br>Also, I'd love to see more of your artwork and writing samples. Would you consider sharing some of your favorites from the challenge?<br><br>Looking forward to hearing your thoughts and seeing more of your creations!<br><br>Best regards,<br>Emily<br><br>---<br><br>Hey Emily, thanks so much for reaching out! I'm thrilled to hear that I might have inspired you to start your own creative challenge. That's exactly what this is all about - encouraging and supporting each other in our creative pursuits.<br><br>Okay, so here are some tips and strategies that have helped me stay on track:<br><br>*   **Start small**: Don't try to tackle too much at once. Begin with a manageable goal, like committing to 5-10 minutes of creative time per day.<br>*   **Be kind to yourself**: Remember that imperfection is part of the process. Don't worry if your first attempts aren't perfect – just have fun with it!<br>*   **Mix it up**: Vary your activities and mediums to keep things interesting. Try drawing one day, writing another, and so on.<br>*   **Make it a habit**: Schedule your creative time into your daily routine, just like brushing your teeth or taking a shower.<br>*   **Celebrate milestones**: Reward yourself for completing a certain number of days or achieving a particular milestone. This will help motivate you to continue.<br><br>As for sharing my favorites from the challenge, I'd be delighted to share some examples with you! Here are a few sketches and writings that stand out to me:<br><br>"
+        }
+      ]
+    }
+  ]
+}

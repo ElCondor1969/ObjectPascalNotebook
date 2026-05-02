@@ -300,7 +300,6 @@ object ScriptUnitBaseLibrary: TScriptUnitBaseLibrary
           item
             Name = 'Value'
             DataType = 'Variant'
-            IsVarParam = True
             IsWritable = False
           end>
         ResultType = 'integer'
@@ -323,7 +322,6 @@ object ScriptUnitBaseLibrary: TScriptUnitBaseLibrary
           item
             Name = 'Value'
             DataType = 'Variant'
-            IsVarParam = True
             IsWritable = False
           end>
         ResultType = 'string'
@@ -335,7 +333,6 @@ object ScriptUnitBaseLibrary: TScriptUnitBaseLibrary
           item
             Name = 'Value'
             DataType = 'Variant'
-            IsVarParam = True
             IsWritable = False
           end>
         ResultType = 'Boolean'
