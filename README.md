@@ -323,7 +323,7 @@ This should be kept in mind if you want to activate an OPNB process intended to 
 As we've already mentioned, the OPNB application was written in Delphi FMX and must be compiled using this language.
 Furthermore, as seen above, [**DWScript**](https://github.com/EricGrange/DWScript) is used as the language for our notebooks. Therefore, to compile the extension, we need the relevant sources.
 
-The repository contains a GIT submodule within the *vendor\DWScript* folder that points to the DWScript repository. Simply checkout this submodule to have all the sources available for compiling the program.
+The repository contains a GIT submodule within the *vendor\DWScript* folder that points to the fork of DWScript repository. Simply checkout this submodule to have all the sources available for compiling the program.
 
 ## Help wanted!
 

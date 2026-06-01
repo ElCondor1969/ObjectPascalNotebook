@@ -467,7 +467,11 @@ var k:integer;
       begin
         Symbol:=FProgram.Table.Symbols[Idx];
         if Assigned(Symbol) and (SymbolList.IndexOf(Symbol)=-1) then
-          FProgram.Table.Remove(Symbol)
+          try
+            FProgram.Table.Remove(Symbol);
+          finally
+            Symbol.Free;
+          end
         else
           Inc(Idx);
       end;
