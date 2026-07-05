@@ -51,6 +51,40 @@ type
     procedure dwsUnitLibraryFunctionsImport_stringstring_Eval(
       info: TProgramInfo);
     procedure dwsUnitLibraryFunctionsVarToBoolEval(info: TProgramInfo);
+    procedure dwsUnitLibraryFunctionsGetMemEval(info: TProgramInfo);
+    procedure dwsUnitLibraryFunctionsAllocMemEval(info: TProgramInfo);
+    procedure dwsUnitLibraryFunctionsReallocMemEval(info: TProgramInfo);
+    procedure dwsUnitLibraryFunctionsFreeMemEval(info: TProgramInfo);
+    procedure dwsUnitLibraryFunctionsReadByteMem_1_Eval(
+      info: TProgramInfo);
+    procedure dwsUnitLibraryFunctionsReadByteMem_2_Eval(
+      info: TProgramInfo);
+    procedure dwsUnitLibraryFunctionsReadWordMem_1_Eval(
+      info: TProgramInfo);
+    procedure dwsUnitLibraryFunctionsReadWordMem_2_Eval(
+      info: TProgramInfo);
+    procedure dwsUnitLibraryFunctionsReadIntegerMem_1_Eval(
+      info: TProgramInfo);
+    procedure dwsUnitLibraryFunctionsReadIntegerMem_2_Eval(
+      info: TProgramInfo);
+    procedure dwsUnitLibraryFunctionsReadFloatMem_1_Eval(
+      info: TProgramInfo);
+    procedure dwsUnitLibraryFunctionsReadFloatMem_2_Eval(
+      info: TProgramInfo);
+    procedure dwsUnitLibraryFunctionsWriteByteMem_1_Eval(
+      info: TProgramInfo);
+    procedure dwsUnitLibraryFunctionsWriteByteMem_2_Eval(
+      info: TProgramInfo);
+    procedure dwsUnitLibraryFunctionsWriteWordMem_1_Eval(
+      info: TProgramInfo);
+    procedure dwsUnitLibraryFunctionsWriteWordMem_2_Eval(
+      info: TProgramInfo);
+    procedure dwsUnitLibraryFunctionsWriteIntegerMem_1_Eval(
+      info: TProgramInfo);
+    procedure dwsUnitLibraryFunctionsWriteIntegerMem_2_Eval(info: TProgramInfo);
+    procedure dwsUnitLibraryFunctionsWriteFloatMem_1_Eval(
+      info: TProgramInfo);
+    procedure dwsUnitLibraryFunctionsWriteFloatMem_2_Eval(info: TProgramInfo);
   private
     { Private declarations }
     FScriptExecuter:TScriptExecuter;
@@ -202,16 +236,128 @@ begin
   AddConsoleOutputRow(Info,true);
 end;
 
+procedure TScriptUnitBaseLibrary.dwsUnitLibraryFunctionsWriteByteMem_2_Eval(
+  Info: TProgramInfo);
+var P: PByte;
+    Value: Byte;
+    Index: Integer;
+begin
+  P:=Pointer(Info.ValueAsInteger['Handle']);
+  Index:=Info.ValueAsInteger['Index'];
+  Inc(PByte(P), Index);
+  Value := Info.ValueAsInteger['Value'];
+  PByte(P)^:=Value;
+  Inc(Index, SizeOf(Byte));
+  Info.ValueAsInteger['Index']:=Index;
+end;
+
+procedure TScriptUnitBaseLibrary.dwsUnitLibraryFunctionsWriteByteMem_1_Eval(
+  Info: TProgramInfo);
+var P: PByte;
+    Value: Byte;
+    Index: Integer;
+begin
+  P:=Pointer(Info.ValueAsInteger['Handle']);
+  Index:=Info.ValueAsInteger['Index'];
+  Inc(PByte(P), Index);
+  Value := Info.ValueAsInteger['Value'];
+  PByte(P)^:=Value;
+end;
+
 procedure TScriptUnitBaseLibrary.dwsUnitLibraryFunctionsWriteEval(
   Info: TProgramInfo);
 begin
   AddConsoleOutputRow(Info,false);
 end;
 
+procedure TScriptUnitBaseLibrary.dwsUnitLibraryFunctionsWriteFloatMem_1_Eval(
+  Info: TProgramInfo);
+var P: PDouble;
+    Index: Integer;
+    Value: Double;
+begin
+  P:=Pointer(Info.ValueAsInteger['Handle']);
+  Index:=Info.ValueAsInteger['Index'];
+  Inc(PByte(P), Index);
+  Value := Info.ValueAsFloat['Value'];
+  P^:=Value;
+end;
+
+procedure TScriptUnitBaseLibrary.dwsUnitLibraryFunctionsWriteFloatMem_2_Eval(
+  Info: TProgramInfo);
+var P: PDouble;
+    Index: Integer;
+    Value: Double;
+begin
+  P:=Pointer(Info.ValueAsInteger['Handle']);
+  Index:=Info.ValueAsInteger['Index'];
+  Inc(PByte(P), Index);
+  Value := Info.ValueAsFloat['Value'];
+  P^:=Value;
+  Inc(Index, SizeOf(Double));
+  Info.ValueAsInteger['Index']:=Index;
+end;
+
+procedure TScriptUnitBaseLibrary.dwsUnitLibraryFunctionsWriteIntegerMem_1_Eval(
+  Info: TProgramInfo);
+var P: PInteger;
+    Index: Integer;
+    Value: Integer;
+begin
+  P:=Pointer(Info.ValueAsInteger['Handle']);
+  Index:=Info.ValueAsInteger['Index'];
+  Inc(PByte(P), Index);
+  Value := Info.ValueAsInteger['Value'];
+  P^:=Value;
+end;
+
+procedure TScriptUnitBaseLibrary.dwsUnitLibraryFunctionsWriteIntegerMem_2_Eval(
+  Info: TProgramInfo);
+var P: PInteger;
+    Index: Integer;
+    Value: Integer;
+begin
+  P:=Pointer(Info.ValueAsInteger['Handle']);
+  Index:=Info.ValueAsInteger['Index'];
+  Inc(PByte(P), Index);
+  Value := Info.ValueAsInteger['Value'];
+  P^:=Value;
+  Inc(Index, SizeOf(Integer));
+  Info.ValueAsInteger['Index']:=Index;
+end;
+
 procedure TScriptUnitBaseLibrary.dwsUnitLibraryFunctionsWriteLnEval(
   Info: TProgramInfo);
 begin
   AddConsoleOutputRow(Info,true);
+end;
+
+procedure TScriptUnitBaseLibrary.dwsUnitLibraryFunctionsWriteWordMem_2_Eval(
+  Info: TProgramInfo);
+var P: PWord;
+    Index: Integer;
+    Value: Word;
+begin
+  P:=Pointer(Info.ValueAsInteger['Handle']);
+  Index:=Info.ValueAsInteger['Index'];
+  Inc(PByte(P), Index);
+  Value := Info.ValueAsInteger['Value'];
+  PWord(P)^:=Value;
+  Inc(Index, SizeOf(Word));
+  Info.ValueAsInteger['Index']:=Index;
+end;
+
+procedure TScriptUnitBaseLibrary.dwsUnitLibraryFunctionsWriteWordMem_1_Eval(
+  Info: TProgramInfo);
+var P: PWord;
+    Value: Word;
+    Index: Integer;
+begin
+  P:=Pointer(Info.ValueAsInteger['Handle']);
+  Index:=Info.ValueAsInteger['Index'];
+  Inc(PByte(P), Index);
+  Value := Info.ValueAsInteger['Value'];
+  PWord(P)^:=Value;
 end;
 
 procedure TScriptUnitBaseLibrary.
@@ -309,6 +455,133 @@ begin
   RaiseException(Info.ValueAsString['AMessage']);
 end;
 
+procedure TScriptUnitBaseLibrary.dwsUnitLibraryFunctionsReadByteMem_2_Eval(
+  Info: TProgramInfo);
+var P: PByte;
+    Value: Byte;
+    Index: Integer;
+begin
+  P:=Pointer(Info.ValueAsInteger['Handle']);
+  Index:=Info.ValueAsInteger['Index'];
+  Inc(PByte(P), Index);
+  Value:=P^;
+  Info.ResultAsInteger:=Value;
+  Inc(Index, SizeOf(Byte));
+  Info.ValueAsInteger['Index']:=Index;
+end;
+
+procedure TScriptUnitBaseLibrary.dwsUnitLibraryFunctionsReadByteMem_1_Eval(
+  Info: TProgramInfo);
+var P: PByte;
+    Value: Byte;
+    Index: Integer;
+begin
+  P:=Pointer(Info.ValueAsInteger['Handle']);
+  Index:=Info.ValueAsInteger['Index'];
+  Inc(PByte(P), Index);
+  Value:=P^;
+  Info.ResultAsInteger:=Value;
+end;
+
+procedure TScriptUnitBaseLibrary.dwsUnitLibraryFunctionsReadFloatMem_2_Eval(
+  Info: TProgramInfo);
+var P: PDouble;
+    Value: Double;
+    Index: Integer;
+begin
+  P:=Pointer(Info.ValueAsInteger['Handle']);
+  Index:=Info.ValueAsInteger['Index'];
+  Inc(PByte(P), Index);
+  Value:=P^;
+  Info.ResultAsFloat:=Value;
+  Inc(Index, SizeOf(Double));
+  Info.ValueAsInteger['Index']:=Index;
+end;
+
+procedure TScriptUnitBaseLibrary.dwsUnitLibraryFunctionsReadFloatMem_1_Eval(
+  Info: TProgramInfo);
+var P: PDouble;
+    Value: Double;
+    Index: Integer;
+begin
+  P:=Pointer(Info.ValueAsInteger['Handle']);
+  Index:=Info.ValueAsInteger['Index'];
+  Inc(PByte(P), Index);
+  Value:=P^;
+  Info.ResultAsFloat:=Value;
+end;
+
+procedure TScriptUnitBaseLibrary.dwsUnitLibraryFunctionsReadIntegerMem_2_Eval(
+  Info: TProgramInfo);
+var P: PInteger;
+    Value: Integer;
+    Index: Integer;
+begin
+  P:=Pointer(Info.ValueAsInteger['Handle']);
+  Index:=Info.ValueAsInteger['Index'];
+  Inc(PByte(P), Index);
+  Value:=P^;
+  Info.ResultAsInteger:=Value;
+  Inc(Index, SizeOf(Integer));
+  Info.ValueAsInteger['Index']:=Index;
+end;
+
+procedure TScriptUnitBaseLibrary.dwsUnitLibraryFunctionsReadIntegerMem_1_Eval(
+  Info: TProgramInfo);
+var P: PInteger;
+    Value: Integer;
+    Index: Integer;
+begin
+  P:=Pointer(Info.ValueAsInteger['Handle']);
+  Index:=Info.ValueAsInteger['Index'];
+  Inc(PByte(P), Index);
+  Value:=P^;
+  Info.ResultAsInteger:=Value;
+end;
+
+procedure TScriptUnitBaseLibrary.dwsUnitLibraryFunctionsReadWordMem_2_Eval(
+  Info: TProgramInfo);
+var P: PWord;
+    Value: Word;
+    Index: Integer;
+begin
+  P:=Pointer(Info.ValueAsInteger['Handle']);
+  Index:=Info.ValueAsInteger['Index'];
+  Inc(PByte(P), Index);
+  Value:=P^;
+  Info.ResultAsInteger:=Value;
+  Inc(Index, SizeOf(Word));
+  Info.ValueAsInteger['Index']:=Index;
+end;
+
+procedure TScriptUnitBaseLibrary.dwsUnitLibraryFunctionsReadWordMem_1_Eval(
+  Info: TProgramInfo);
+var P: PWord;
+    Value: Word;
+    Index: Integer;
+begin
+  P:=Pointer(Info.ValueAsInteger['Handle']);
+  Index:=Info.ValueAsInteger['Index'];
+  Inc(PByte(P), Index);
+  Value:=P^;
+  Info.ResultAsInteger:=Value;
+end;
+
+procedure TScriptUnitBaseLibrary.dwsUnitLibraryFunctionsReallocMemEval(
+  Info: TProgramInfo);
+var P, PP: Pointer;
+begin
+  P:=Pointer(Info.ValueAsInteger['Handle']);
+  PP:=P;
+  ReallocMem(P, Info.ValueAsInteger['NewSize']);
+  with FScriptExecuter.AllocatedBlockMemory do
+    begin
+      Remove(PP);
+      Add(P);
+    end;
+  Info.ResultAsInteger:=NativeInt(P);
+end;
+
 procedure TScriptUnitBaseLibrary.dwsUnitLibraryFunctionsRegisterMessageCallbackEval(
   Info: TProgramInfo);
 var MessageCallback:variant;
@@ -356,6 +629,15 @@ begin
   Info.ResultAsString:=Info.ValueAsString['Value'];
 end;
 
+procedure TScriptUnitBaseLibrary.dwsUnitLibraryFunctionsAllocMemEval(
+  Info: TProgramInfo);
+var P: Pointer;
+begin
+  P:=AllocMem(Info.ValueAsInteger['Size']);
+  FScriptExecuter.AllocatedBlockMemory.Add(P);
+  Info.ResultAsInteger:=NativeInt(P);
+end;
+
 procedure TScriptUnitBaseLibrary.dwsUnitLibraryFunctionsCreateProcessEval(
   Info: TProgramInfo);
 begin
@@ -370,6 +652,24 @@ procedure TScriptUnitBaseLibrary.dwsUnitLibraryFunctionsEnablePostingMessageEval
   Info: TProgramInfo);
 begin
   FScriptExecuter.PostingMessageEnabled:=Info.ValueAsBoolean['Enable'];
+end;
+
+procedure TScriptUnitBaseLibrary.dwsUnitLibraryFunctionsFreeMemEval(
+  Info: TProgramInfo);
+var P: Pointer;
+begin
+  P:=Pointer(Info.ValueAsInteger['Handle']);
+  FreeMem(P);
+  FScriptExecuter.AllocatedBlockMemory.Remove(P);
+end;
+
+procedure TScriptUnitBaseLibrary.dwsUnitLibraryFunctionsGetMemEval(
+  Info: TProgramInfo);
+var P: Pointer;
+begin
+  GetMem(P, Info.ValueAsInteger['Size']);
+  FScriptExecuter.AllocatedBlockMemory.Add(P);
+  Info.ResultAsInteger:=NativeInt(P);
 end;
 
 procedure TScriptUnitBaseLibrary.dwsUnitLibraryFunctionsImport_stringstring_Eval(

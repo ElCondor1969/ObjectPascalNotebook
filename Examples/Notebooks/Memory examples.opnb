@@ -1,0 +1,184 @@
+{
+  "cells": [
+    {
+      "kind": "code",
+      "value": "Restart; // Execute for release all resources and restart the execution of the notebook.",
+      "language": "objectpascal",
+      "outputs": [
+        {
+          "value": "OK"
+        }
+      ]
+    },
+    {
+      "kind": "markdown",
+      "value": "We allocate a block of memory.",
+      "language": "markdown"
+    },
+    {
+      "kind": "code",
+      "value": "var Blk1 := GetMem(10); // Allocate 10 bytes of memory",
+      "language": "objectpascal",
+      "outputs": [
+        {
+          "value": "OK"
+        }
+      ]
+    },
+    {
+      "kind": "markdown",
+      "value": "Now let's write ten bytes inside the block.",
+      "language": "markdown"
+    },
+    {
+      "kind": "code",
+      "value": "var Index := 0;\r\nfor var i := 0 to 9 do\r\n  WriteByteMemI(Blk1,Index,i+1); // On exit Index will point to the next offset.",
+      "language": "objectpascal",
+      "outputs": [
+        {
+          "value": "OK"
+        }
+      ]
+    },
+    {
+      "kind": "markdown",
+      "value": "To check whether the data has been written correctly, let's read it.",
+      "language": "markdown"
+    },
+    {
+      "kind": "code",
+      "value": "Index := 0;\r\nfor var i := 0 to 9 do\r\n  WriteLn('Value ',i,' = ',ReadByteMemI(Blk1,Index)); // On exit Index will point to the next offset. ",
+      "language": "objectpascal",
+      "outputs": [
+        {
+          "value": "Value 0 = 1<br>Value 1 = 2<br>Value 2 = 3<br>Value 3 = 4<br>Value 4 = 5<br>Value 5 = 6<br>Value 6 = 7<br>Value 7 = 8<br>Value 8 = 9<br>Value 9 = 10<br>"
+        }
+      ]
+    },
+    {
+      "kind": "markdown",
+      "value": "We allocate a block of memory with each byte initialized to zero.",
+      "language": "markdown"
+    },
+    {
+      "kind": "code",
+      "value": "var Blk2 := AllocMem(40); // Allocate 5 floats (40 bytes) of memory",
+      "language": "objectpascal",
+      "outputs": [
+        {
+          "value": "OK"
+        }
+      ]
+    },
+    {
+      "kind": "markdown",
+      "value": "We verify that the block was initialized with all values ​​0.",
+      "language": "markdown"
+    },
+    {
+      "kind": "code",
+      "value": "Index := 0;\r\nfor var i := 0 to 4 do\r\n  WriteLn('Value ',i,' = ',ReadFloatMemI(Blk2,Index));",
+      "language": "objectpascal",
+      "outputs": [
+        {
+          "value": "Value 0 = 0<br>Value 1 = 0<br>Value 2 = 0<br>Value 3 = 0<br>Value 4 = 0<br>"
+        }
+      ]
+    },
+    {
+      "kind": "markdown",
+      "value": "Now let's write down 5 random real numbers.",
+      "language": "markdown"
+    },
+    {
+      "kind": "code",
+      "value": "Index := 0;\r\nfor var i := 0 to 4 do\r\n  WriteFloatMemI(Blk2,Index,Random); // On exit Index will point to the next offset.",
+      "language": "objectpascal",
+      "outputs": [
+        {
+          "value": "OK"
+        }
+      ]
+    },
+    {
+      "kind": "markdown",
+      "value": "To check whether the data has been written correctly, let's read it.",
+      "language": "markdown"
+    },
+    {
+      "kind": "code",
+      "value": "Index := 0;\r\nfor var i := 0 to 4 do\r\n  WriteLn('Value ',i,' = ',ReadFloatMemI(Blk2,Index)); // On exit Index will point to the next offset.",
+      "language": "objectpascal",
+      "outputs": [
+        {
+          "value": "Value 0 = 0,12406485251915<br>Value 1 = 0,414470778450012<br>Value 2 = 0,462452673284911<br>Value 3 = 0,882958703081068<br>Value 4 = 0,758537840212332<br>"
+        }
+      ]
+    },
+    {
+      "kind": "markdown",
+      "value": "Let's increase the space of the second block to accommodate two additional floats.",
+      "language": "markdown"
+    },
+    {
+      "kind": "code",
+      "value": "Blk2 := ReallocMem(Blk2,56); // Reallocate 7 floats (56 bytes) of memory",
+      "language": "objectpascal",
+      "outputs": [
+        {
+          "value": "OK"
+        }
+      ]
+    },
+    {
+      "kind": "markdown",
+      "value": "We write in the last two allocated spaces.",
+      "language": "markdown"
+    },
+    {
+      "kind": "code",
+      "value": "WriteFloatMem(Blk2,40,11.11); // Write a new float value at index 5\r\nWriteFloatMem(Blk2,48,12.12); // Write a new float value at index 6",
+      "language": "objectpascal",
+      "outputs": [
+        {
+          "value": "OK"
+        }
+      ]
+    },
+    {
+      "kind": "markdown",
+      "value": "Let's check that the previous values ​​have been maintained and that the last two values ​​written are also present.",
+      "language": "markdown"
+    },
+    {
+      "kind": "code",
+      "value": "Index := 0;\r\nfor var i := 0 to 6 do\r\n  WriteLn('Value ',i,' = ',ReadFloatMemI(Blk2,Index)); // On exit Index will point to the next offset.",
+      "language": "objectpascal",
+      "outputs": [
+        {
+          "value": "Value 0 = 0,12406485251915<br>Value 1 = 0,414470778450012<br>Value 2 = 0,462452673284911<br>Value 3 = 0,882958703081068<br>Value 4 = 0,758537840212332<br>Value 5 = 11,11<br>Value 6 = 12,12<br>"
+        }
+      ]
+    },
+    {
+      "kind": "markdown",
+      "value": "Let's free up the previously allocated memory blocks.",
+      "language": "markdown"
+    },
+    {
+      "kind": "code",
+      "value": "FreeMem(Blk1);\r\nFreeMem(Blk2);",
+      "language": "objectpascal",
+      "outputs": [
+        {
+          "value": "OK"
+        }
+      ]
+    },
+    {
+      "kind": "markdown",
+      "value": "Here are all the procedures available for reading and writing memory blocks.\r\n\r\n*With auto-increment of the index*\r\n- ReadByteMemI\r\n- ReadWordMemI\r\n- ReadIntegerMemI\r\n- ReadFloatMemI\r\n- WriteByteMemI\r\n- WriteWordMemI\r\n- WriteIntegerMemI\r\n- WriteFloatMemI\r\n\r\n*Without auto-incrementing the index*\r\n- ReadByteMem\r\n- ReadWordMem\r\n- ReadIntegerMem\r\n- ReadFloatMem\r\n- WriteByteMem\r\n- WriteWordMem\r\n- WriteIntegerMem\r\n- WriteFloatMem",
+      "language": "markdown"
+    }
+  ]
+}

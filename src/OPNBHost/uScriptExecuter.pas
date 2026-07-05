@@ -6,7 +6,7 @@ uses
   System.Classes, dwsUtils, System.SysUtils, System.IOUtils, System.StrUtils, System.Variants, System.Types, Generics.Collections,
   System.RegularExpressions, uDynLibLoader, JSON, uLibInterface, uUtility, dwsStrings, dwsComp, dwsExprs, dwsDataContext, dwsInfo,
   dwsCompiler, dwsFunctions, dwsStack, dwsClassesLibModule, dwsJSONConnector, dwsDataBaseLibModule, dwsLinq, dwsLinqSql, 
-  dwsSymbols, dwsUnitSymbols, dwsScriptSource, dwsRTTIConnector, dwsRTTIFunctions, dwsDynamicArrays;
+  dwsSymbols, dwsUnitSymbols, dwsScriptSource, dwsRTTIConnector, dwsRTTIFunctions, dwsDynamicArrays, dwsFileFunctions;
 
 type
   TScriptExecuter = class(TDataModule)
@@ -57,6 +57,7 @@ type
     FInternalDestroying: boolean;
     FExecutionPath:string;
     FVariablesDictionary:TDictionary<string,variant>;
+    FAllocatedBlockMemory:TList<Pointer>;
     FLibraryUnitAdded:TStringList;
     FUnitSearch:TUnitSearch;
     FProgram:IdwsProgram;
@@ -72,6 +73,7 @@ type
     procedure SetCancelPending(const Value:boolean);
     procedure LoadLibraries(var Args: array of variant);
     procedure UnloadLibraries(const Args: array of variant);
+    procedure FreeAllocatedBlockMemory;
   protected
     { Protected declarations }
     function GetUnitList:string;virtual;
@@ -100,6 +102,7 @@ type
     property CancelPending:boolean read GetCancelPending write SetCancelPending;
     property OutputData:TJSONObject read FOutputData;
     property PostingMessageEnabled:boolean read FPostingMessageEnabled write FPostingMessageEnabled;
+    property AllocatedBlockMemory:TList<Pointer> read FAllocatedBlockMemory;
   end;
 
 implementation
@@ -399,6 +402,7 @@ begin
   inherited;
   FVariablesDictionary:=TDictionary<string,variant>.Create;
   FMessageCallbacksDictionary:=TDictionary<variant,variant>.Create;
+  FAllocatedBlockMemory:=TList<Pointer>.Create;
   FPostedMessages:=TThreadedQueue<TPostedMessage>.Create(16384,60*1000,60*1000);
   FLibraryUnitAdded:=TStringList.Create;
   FUnitSearch:=TUnitSearch.Create(Self);
@@ -416,8 +420,10 @@ begin
   FInternalDestroying:=true;
   ExecuteScript(''); // Release all resources;
   inherited;
+  FreeAllocatedBlockMemory;
   FPostedMessages.Free;
   FMessageCallbacksDictionary.Free;
+  FAllocatedBlockMemory.Free;
   FVariablesDictionary.Free;
   FLibraryUnitAdded.Free;
   FUnitSearch.Free;
@@ -634,6 +640,16 @@ begin
     if (Assigned(SymbolList)) then
       SymbolList.Free;
   end;
+end;
+
+procedure TScriptExecuter.FreeAllocatedBlockMemory;
+var P, PP: Pointer;
+begin
+  for P in FAllocatedBlockMemory do
+    begin
+      PP:=P;
+      FreeMem(PP);
+    end;
 end;
 
 procedure TScriptExecuter.InjectUnit(var Script:string);

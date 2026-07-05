@@ -605,6 +605,379 @@ object ScriptUnitBaseLibrary: TScriptUnitBaseLibrary
             IsWritable = False
           end>
         OnEval = dwsUnitLibraryFunctionsTerminateProcessEval
+      end
+      item
+        Name = 'GetMem'
+        Parameters = <
+          item
+            Name = 'Size'
+            DataType = 'Integer'
+            IsVarParam = True
+            IsWritable = False
+          end>
+        ResultType = 'Integer'
+        OnEval = dwsUnitLibraryFunctionsGetMemEval
+      end
+      item
+        Name = 'AllocMem'
+        Parameters = <
+          item
+            Name = 'Size'
+            DataType = 'Integer'
+            IsVarParam = True
+            IsWritable = False
+          end>
+        ResultType = 'Integer'
+        OnEval = dwsUnitLibraryFunctionsAllocMemEval
+      end
+      item
+        Name = 'ReallocMem'
+        Parameters = <
+          item
+            Name = 'Handle'
+            DataType = 'Integer'
+            IsVarParam = True
+            IsWritable = False
+          end
+          item
+            Name = 'NewSize'
+            DataType = 'Integer'
+            IsVarParam = True
+            IsWritable = False
+          end>
+        ResultType = 'Integer'
+        OnEval = dwsUnitLibraryFunctionsReallocMemEval
+      end
+      item
+        Name = 'FreeMem'
+        Parameters = <
+          item
+            Name = 'Handle'
+            DataType = 'Integer'
+            IsVarParam = True
+            IsWritable = False
+          end>
+        OnEval = dwsUnitLibraryFunctionsFreeMemEval
+      end
+      item
+        Name = 'ReadByteMem'
+        Parameters = <
+          item
+            Name = 'Handle'
+            DataType = 'Integer'
+            IsVarParam = True
+            IsWritable = False
+          end
+          item
+            Name = 'Index'
+            DataType = 'Integer'
+            IsVarParam = True
+            IsWritable = False
+          end>
+        ResultType = 'Integer'
+        OnEval = dwsUnitLibraryFunctionsReadByteMem_1_Eval
+      end
+      item
+        Name = 'ReadByteMemI'
+        Parameters = <
+          item
+            Name = 'Handle'
+            DataType = 'Integer'
+            IsVarParam = True
+            IsWritable = False
+          end
+          item
+            Name = 'Index'
+            DataType = 'Integer'
+            IsVarParam = True
+          end>
+        ResultType = 'Integer'
+        OnEval = dwsUnitLibraryFunctionsReadByteMem_2_Eval
+      end
+      item
+        Name = 'ReadWordMem'
+        Parameters = <
+          item
+            Name = 'Handle'
+            DataType = 'Integer'
+            IsVarParam = True
+            IsWritable = False
+          end
+          item
+            Name = 'Index'
+            DataType = 'Integer'
+            IsVarParam = True
+            IsWritable = False
+          end>
+        ResultType = 'Integer'
+        OnEval = dwsUnitLibraryFunctionsReadWordMem_1_Eval
+      end
+      item
+        Name = 'ReadWordMemI'
+        Parameters = <
+          item
+            Name = 'Handle'
+            DataType = 'Integer'
+            IsVarParam = True
+            IsWritable = False
+          end
+          item
+            Name = 'Index'
+            DataType = 'Integer'
+            IsVarParam = True
+          end>
+        ResultType = 'Integer'
+        OnEval = dwsUnitLibraryFunctionsReadWordMem_2_Eval
+      end
+      item
+        Name = 'ReadIntegerMem'
+        Parameters = <
+          item
+            Name = 'Handle'
+            DataType = 'Integer'
+            IsVarParam = True
+            IsWritable = False
+          end
+          item
+            Name = 'Index'
+            DataType = 'Integer'
+            IsVarParam = True
+            IsWritable = False
+          end>
+        ResultType = 'Integer'
+        OnEval = dwsUnitLibraryFunctionsReadIntegerMem_1_Eval
+      end
+      item
+        Name = 'ReadIntegerMemI'
+        Parameters = <
+          item
+            Name = 'Handle'
+            DataType = 'Integer'
+            IsVarParam = True
+            IsWritable = False
+          end
+          item
+            Name = 'Index'
+            DataType = 'Integer'
+            IsVarParam = True
+          end>
+        ResultType = 'Integer'
+        OnEval = dwsUnitLibraryFunctionsReadIntegerMem_2_Eval
+      end
+      item
+        Name = 'ReadFloatMem'
+        Parameters = <
+          item
+            Name = 'Handle'
+            DataType = 'Integer'
+            IsVarParam = True
+            IsWritable = False
+          end
+          item
+            Name = 'Index'
+            DataType = 'Integer'
+            IsVarParam = True
+            IsWritable = False
+          end>
+        ResultType = 'Float'
+        OnEval = dwsUnitLibraryFunctionsReadFloatMem_1_Eval
+      end
+      item
+        Name = 'ReadFloatMemI'
+        Parameters = <
+          item
+            Name = 'Handle'
+            DataType = 'Integer'
+            IsVarParam = True
+            IsWritable = False
+          end
+          item
+            Name = 'Index'
+            DataType = 'Integer'
+            IsVarParam = True
+          end>
+        ResultType = 'Float'
+        OnEval = dwsUnitLibraryFunctionsReadFloatMem_2_Eval
+      end
+      item
+        Name = 'WriteByteMem'
+        Parameters = <
+          item
+            Name = 'Handle'
+            DataType = 'Integer'
+            IsVarParam = True
+            IsWritable = False
+          end
+          item
+            Name = 'Index'
+            DataType = 'Integer'
+            IsVarParam = True
+            IsWritable = False
+          end
+          item
+            Name = 'Value'
+            DataType = 'Integer'
+            IsVarParam = True
+            IsWritable = False
+          end>
+        OnEval = dwsUnitLibraryFunctionsWriteByteMem_1_Eval
+      end
+      item
+        Name = 'WriteByteMemI'
+        Parameters = <
+          item
+            Name = 'Handle'
+            DataType = 'Integer'
+            IsVarParam = True
+            IsWritable = False
+          end
+          item
+            Name = 'Index'
+            DataType = 'Integer'
+            IsVarParam = True
+          end
+          item
+            Name = 'Value'
+            DataType = 'Integer'
+            IsVarParam = True
+            IsWritable = False
+          end>
+        OnEval = dwsUnitLibraryFunctionsWriteByteMem_2_Eval
+      end
+      item
+        Name = 'WriteWordMem'
+        Parameters = <
+          item
+            Name = 'Handle'
+            DataType = 'Integer'
+            IsVarParam = True
+            IsWritable = False
+          end
+          item
+            Name = 'Index'
+            DataType = 'Integer'
+            IsVarParam = True
+            IsWritable = False
+          end
+          item
+            Name = 'Value'
+            DataType = 'Integer'
+            IsVarParam = True
+            IsWritable = False
+          end>
+        OnEval = dwsUnitLibraryFunctionsWriteWordMem_1_Eval
+      end
+      item
+        Name = 'WriteWordMemI'
+        Parameters = <
+          item
+            Name = 'Handle'
+            DataType = 'Integer'
+            IsVarParam = True
+            IsWritable = False
+          end
+          item
+            Name = 'Index'
+            DataType = 'Integer'
+            IsVarParam = True
+          end
+          item
+            Name = 'Value'
+            DataType = 'Integer'
+            IsVarParam = True
+            IsWritable = False
+          end>
+        OnEval = dwsUnitLibraryFunctionsWriteWordMem_2_Eval
+      end
+      item
+        Name = 'WriteIntegerMem'
+        Parameters = <
+          item
+            Name = 'Handle'
+            DataType = 'Integer'
+            IsVarParam = True
+            IsWritable = False
+          end
+          item
+            Name = 'Index'
+            DataType = 'Integer'
+            IsVarParam = True
+            IsWritable = False
+          end
+          item
+            Name = 'Value'
+            DataType = 'Integer'
+            IsVarParam = True
+            IsWritable = False
+          end>
+        OnEval = dwsUnitLibraryFunctionsWriteIntegerMem_1_Eval
+      end
+      item
+        Name = 'WriteIntegerMemI'
+        Parameters = <
+          item
+            Name = 'Handle'
+            DataType = 'Integer'
+            IsVarParam = True
+            IsWritable = False
+          end
+          item
+            Name = 'Index'
+            DataType = 'Integer'
+            IsVarParam = True
+          end
+          item
+            Name = 'Value'
+            DataType = 'Integer'
+            IsVarParam = True
+            IsWritable = False
+          end>
+        OnEval = dwsUnitLibraryFunctionsWriteIntegerMem_2_Eval
+      end
+      item
+        Name = 'WriteFloatMem'
+        Parameters = <
+          item
+            Name = 'Handle'
+            DataType = 'Integer'
+            IsVarParam = True
+            IsWritable = False
+          end
+          item
+            Name = 'Index'
+            DataType = 'Integer'
+            IsVarParam = True
+            IsWritable = False
+          end
+          item
+            Name = 'Value'
+            DataType = 'Float'
+            IsVarParam = True
+            IsWritable = False
+          end>
+        OnEval = dwsUnitLibraryFunctionsWriteFloatMem_1_Eval
+      end
+      item
+        Name = 'WriteFloatMemI'
+        Parameters = <
+          item
+            Name = 'Handle'
+            DataType = 'Integer'
+            IsVarParam = True
+            IsWritable = False
+          end
+          item
+            Name = 'Index'
+            DataType = 'Integer'
+            IsVarParam = True
+          end
+          item
+            Name = 'Value'
+            DataType = 'Float'
+            IsVarParam = True
+            IsWritable = False
+          end>
+        OnEval = dwsUnitLibraryFunctionsWriteFloatMem_2_Eval
       end>
     Delegates = <
       item
